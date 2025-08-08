@@ -95,9 +95,12 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
     // Student management routes
-    Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
     Route::get('students/export', [\App\Http\Controllers\Admin\StudentController::class, 'export'])->name('students.export');
+    Route::get('students/import', [\App\Http\Controllers\Admin\StudentController::class, 'showImport'])->name('students.show-import');
+    Route::post('students/import', [\App\Http\Controllers\Admin\StudentController::class, 'import'])->name('students.import');
+    Route::get('students/download-template', [\App\Http\Controllers\Admin\StudentController::class, 'downloadTemplate'])->name('students.download-template');
     Route::post('students/bulk-action', [\App\Http\Controllers\Admin\StudentController::class, 'bulkAction'])->name('students.bulk-action');
+    Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
 
     // Simple student creation form for debugging
     Route::get('students-simple/create', function() {

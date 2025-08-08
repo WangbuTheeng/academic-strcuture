@@ -24,8 +24,21 @@ use Illuminate\Support\Facades\Storage;
             <button onclick="toggleBulkActions()" class="btn btn-secondary me-2">
                 <i class="fas fa-tasks"></i> Bulk Actions
             </button>
-            <a href="{{ route('admin.students.export') }}" class="btn btn-success me-2">
-                <i class="fas fa-download"></i> Export
+            <div class="btn-group me-2" role="group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ route('admin.students.export', ['format' => 'csv'] + request()->query()) }}">
+                        <i class="fas fa-file-csv"></i> Export as CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.students.export', ['format' => 'pdf'] + request()->query()) }}">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </a></li>
+                </ul>
+            </div>
+            <a href="{{ route('admin.students.show-import') }}" class="btn btn-info me-2">
+                <i class="fas fa-upload"></i> Import
             </a>
             <a href="{{ route('admin.students.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add Student
