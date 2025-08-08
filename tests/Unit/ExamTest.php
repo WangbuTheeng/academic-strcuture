@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use Tests\TestCase;
 use App\Models\Exam;
 use App\Models\AcademicYear;
-use App\Models\Semester;
+
 use App\Models\ClassModel;
 use App\Models\Subject;
 use App\Models\GradingScale;
@@ -25,7 +25,6 @@ class ExamTest extends TestCase
         parent::setUp();
         
         $this->academicYear = AcademicYear::factory()->create();
-        $this->semester = Semester::factory()->create(['academic_year_id' => $this->academicYear->id]);
         $this->class = ClassModel::factory()->create();
         $this->subject = Subject::factory()->create();
         $this->gradingScale = GradingScale::factory()->create();
@@ -39,7 +38,7 @@ class ExamTest extends TestCase
             'name' => 'First Terminal Exam',
             'exam_type' => 'terminal',
             'academic_year_id' => $this->academicYear->id,
-            'semester_id' => $this->semester->id,
+
             'class_id' => $this->class->id,
             'subject_id' => $this->subject->id,
             'max_marks' => 100,
@@ -83,15 +82,6 @@ class ExamTest extends TestCase
         
         $this->assertInstanceOf(AcademicYear::class, $exam->academicYear);
         $this->assertEquals($this->academicYear->id, $exam->academicYear->id);
-    }
-
-    /** @test */
-    public function it_belongs_to_semester()
-    {
-        $exam = Exam::factory()->create(['semester_id' => $this->semester->id]);
-        
-        $this->assertInstanceOf(Semester::class, $exam->semester);
-        $this->assertEquals($this->semester->id, $exam->semester->id);
     }
 
     /** @test */

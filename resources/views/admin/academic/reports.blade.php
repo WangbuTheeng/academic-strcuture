@@ -246,10 +246,7 @@
                                         @endif
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td class="fw-bold">Active Semesters:</td>
-                                    <td><span class="badge bg-info">{{ $stats['active_semesters'] }}</span></td>
-                                </tr>
+
                                 <tr>
                                     <td class="fw-bold">Total Programs:</td>
                                     <td><span class="badge bg-primary">{{ $stats['total_programs'] }}</span></td>

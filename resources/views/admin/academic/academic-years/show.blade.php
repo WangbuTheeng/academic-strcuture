@@ -83,44 +83,33 @@
                 </div>
             </div>
 
-            <!-- Semesters -->
-            @if($academicYear->semesters->count() > 0)
+            <!-- Academic Year Duration -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-success">Semesters</h6>
+                    <h6 class="m-0 font-weight-bold text-success">Academic Calendar</h6>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Semester</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($academicYear->semesters as $semester)
-                                <tr>
-                                    <td class="fw-bold">{{ $semester->name }}</td>
-                                    <td>{{ $semester->start_date->format('M d, Y') }}</td>
-                                    <td>{{ $semester->end_date->format('M d, Y') }}</td>
-                                    <td>
-                                        @if($semester->is_active)
-                                            <span class="badge bg-success">Active</span>
-                                        @else
-                                            <span class="badge bg-secondary">Inactive</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Academic Year Duration</h6>
+                            <p class="text-muted">
+                                This academic year runs from
+                                <strong>{{ $academicYear->start_date?->format('M d, Y') ?? 'Not Set' }}</strong>
+                                to
+                                <strong>{{ $academicYear->end_date?->format('M d, Y') ?? 'Not Set' }}</strong>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Status</h6>
+                            @if($academicYear->is_current)
+                                <span class="badge bg-success fs-6">Current Academic Year</span>
+                            @else
+                                <span class="badge bg-secondary fs-6">Inactive</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
-            @endif
         </div>
 
         <!-- Statistics -->
@@ -133,18 +122,24 @@
                     <div class="row text-center">
                         <div class="col-6 mb-3">
                             <div class="border-end">
-                                <div class="h4 mb-0 text-primary">{{ $academicYear->semesters->count() }}</div>
-                                <small class="text-muted">Semesters</small>
+                                <div class="h4 mb-0 text-primary">{{ $academicYear->exams->count() ?? 0 }}</div>
+                                <small class="text-muted">Exams</small>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="h4 mb-0 text-success">{{ $academicYear->exams->count() ?? 0 }}</div>
-                            <small class="text-muted">Exams</small>
+                            <div class="h4 mb-0 text-success">{{ $academicYear->enrollments->count() ?? 0 }}</div>
+                            <small class="text-muted">Enrollments</small>
                         </div>
                         <div class="col-6">
                             <div class="border-end">
-                                <div class="h4 mb-0 text-info">{{ $academicYear->enrollments->count() ?? 0 }}</div>
-                                <small class="text-muted">Enrollments</small>
+                                <div class="h4 mb-0 text-info">
+                                    @if($academicYear->start_date && $academicYear->end_date)
+                                        {{ $academicYear->start_date->diffInDays($academicYear->end_date) }}
+                                    @else
+                                        0
+                                    @endif
+                                </div>
+                                <small class="text-muted">Days</small>
                             </div>
                         </div>
                         <div class="col-6">
@@ -172,9 +167,9 @@
                             </form>
                         @endif
                         
-                        <a href="{{ route('admin.semesters.create', ['academic_year' => $academicYear->id]) }}" 
+                        <a href="{{ route('admin.students.index', ['academic_year' => $academicYear->id]) }}"
                            class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Add Semester
+                            <i class="fas fa-users me-1"></i>View Students
                         </a>
                         
                         <a href="{{ route('admin.exams.create', ['academic_year' => $academicYear->id]) }}" 

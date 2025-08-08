@@ -21,8 +21,11 @@ class Exam extends Model
         'subject_id',
         'max_marks',
         'theory_max',
+        'theory_pass_marks',
         'practical_max',
+        'practical_pass_marks',
         'assess_max',
+        'assess_pass_marks',
         'has_practical',
         'has_assessment',
         'start_date',
@@ -48,8 +51,11 @@ class Exam extends Model
         'locked_at' => 'datetime',
         'max_marks' => 'decimal:2',
         'theory_max' => 'decimal:2',
+        'theory_pass_marks' => 'decimal:2',
         'practical_max' => 'decimal:2',
+        'practical_pass_marks' => 'decimal:2',
         'assess_max' => 'decimal:2',
+        'assess_pass_marks' => 'decimal:2',
         'has_practical' => 'boolean',
         'has_assessment' => 'boolean',
     ];
@@ -61,8 +67,6 @@ class Exam extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
-
-
 
     /**
      * Get the class that owns the exam.
@@ -295,7 +299,7 @@ class Exam extends Model
             'project' => 'Project',
             'practical' => 'Practical',
             'final' => 'Final Exam',
-            default => ucfirst($this->exam_type)
+            default => ucwords(str_replace(['_', '-'], ' ', $this->exam_type))
         };
     }
 }

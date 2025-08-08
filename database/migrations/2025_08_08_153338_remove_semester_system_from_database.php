@@ -42,38 +42,54 @@ return new class extends Migration
 
         // Remove semester_id from exams table
         if (Schema::hasTable('exams') && Schema::hasColumn('exams', 'semester_id')) {
-            Schema::table('exams', function (Blueprint $table) {
-                $table->dropColumn('semester_id');
-            });
-            echo "✅ Removed semester_id from exams table\n";
+            try {
+                Schema::table('exams', function (Blueprint $table) {
+                    $table->dropColumn('semester_id');
+                });
+                echo "✅ Removed semester_id from exams table\n";
+            } catch (\Exception $e) {
+                echo "⚠️  Error removing semester_id from exams table: " . $e->getMessage() . "\n";
+            }
         }
 
         // Remove semester_id from program_subjects pivot table
         if (Schema::hasTable('program_subjects') && Schema::hasColumn('program_subjects', 'semester_id')) {
-            Schema::table('program_subjects', function (Blueprint $table) {
-                $table->dropColumn('semester_id');
-            });
-            echo "✅ Removed semester_id from program_subjects table\n";
+            try {
+                Schema::table('program_subjects', function (Blueprint $table) {
+                    $table->dropColumn('semester_id');
+                });
+                echo "✅ Removed semester_id from program_subjects table\n";
+            } catch (\Exception $e) {
+                echo "⚠️  Error removing semester_id from program_subjects table: " . $e->getMessage() . "\n";
+            }
         } else {
             echo "ℹ️  semester_id column not found in program_subjects table\n";
         }
 
         // Remove semester_id from class_subjects pivot table
         if (Schema::hasTable('class_subjects') && Schema::hasColumn('class_subjects', 'semester_id')) {
-            Schema::table('class_subjects', function (Blueprint $table) {
-                $table->dropColumn('semester_id');
-            });
-            echo "✅ Removed semester_id from class_subjects table\n";
+            try {
+                Schema::table('class_subjects', function (Blueprint $table) {
+                    $table->dropColumn('semester_id');
+                });
+                echo "✅ Removed semester_id from class_subjects table\n";
+            } catch (\Exception $e) {
+                echo "⚠️  Error removing semester_id from class_subjects table: " . $e->getMessage() . "\n";
+            }
         } else {
             echo "ℹ️  semester_id column not found in class_subjects table\n";
         }
 
         // Remove semester_id from program_classes pivot table
         if (Schema::hasTable('program_classes') && Schema::hasColumn('program_classes', 'semester_id')) {
-            Schema::table('program_classes', function (Blueprint $table) {
-                $table->dropColumn('semester_id');
-            });
-            echo "✅ Removed semester_id from program_classes table\n";
+            try {
+                Schema::table('program_classes', function (Blueprint $table) {
+                    $table->dropColumn('semester_id');
+                });
+                echo "✅ Removed semester_id from program_classes table\n";
+            } catch (\Exception $e) {
+                echo "⚠️  Error removing semester_id from program_classes table: " . $e->getMessage() . "\n";
+            }
         } else {
             echo "ℹ️  semester_id column not found in program_classes table\n";
         }

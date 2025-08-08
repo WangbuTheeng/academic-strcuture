@@ -1,5 +1,5 @@
 <!-- Academic Structure Sub-Navigation -->
-<div class="card shadow-sm mb-4 sub-navbar-card">
+<div class="card shadow-sm mb-4 sub-navbar-card" style="position: sticky; top: 0; z-index: 1045;">
     <div class="card-body py-2">
         <nav class="navbar navbar-expand-lg navbar-light p-0">
             <div class="container-fluid p-0">
@@ -162,6 +162,8 @@
 
 .sub-navbar-card {
     z-index: 1045 !important;
+    background-color: #ffffff;
+    border: 1px solid #e3e6f0;
 }
 
 /* Ensure all text is properly visible */

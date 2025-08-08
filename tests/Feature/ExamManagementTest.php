@@ -6,7 +6,7 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Exam;
 use App\Models\AcademicYear;
-use App\Models\Semester;
+
 use App\Models\ClassModel;
 use App\Models\Subject;
 use App\Models\GradingScale;
@@ -24,7 +24,7 @@ class ExamManagementTest extends TestCase
     protected $admin;
     protected $teacher;
     protected $academicYear;
-    protected $semester;
+
     protected $class;
     protected $subject;
     protected $gradingScale;
@@ -53,7 +53,6 @@ class ExamManagementTest extends TestCase
 
         // Create related models
         $this->academicYear = AcademicYear::factory()->create();
-        $this->semester = Semester::factory()->create(['academic_year_id' => $this->academicYear->id]);
         
         $level = Level::factory()->create();
         $this->class = ClassModel::factory()->create(['level_id' => $level->id]);
@@ -114,7 +113,7 @@ class ExamManagementTest extends TestCase
             'name' => 'First Terminal Exam',
             'exam_type' => 'terminal',
             'academic_year_id' => $this->academicYear->id,
-            'semester_id' => $this->semester->id,
+
             'class_id' => $this->class->id,
             'subject_id' => $this->subject->id,
             'max_marks' => 100,

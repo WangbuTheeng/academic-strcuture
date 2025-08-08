@@ -206,4 +206,18 @@ class SubjectController extends Controller
 
         return back()->with('success', $message);
     }
+
+    /**
+     * Update the status of the specified resource in storage.
+     */
+    public function updateStatus(Request $request, Subject $subject)
+    {
+        $request->validate([
+            'is_active' => 'required|boolean',
+        ]);
+
+        $subject->update(['is_active' => $request->is_active]);
+
+        return back()->with('success', 'Subject status updated successfully.');
+    }
 }

@@ -162,13 +162,13 @@
                                 <th>Roll No.</th>
                                 <th>Student Name</th>
                                 <th>Class</th>
-                                @if($exam->assess_max)
+                                @if($exam->has_assessment && $exam->assess_max > 0)
                                     <th>Assessment</th>
                                 @endif
-                                @if($exam->theory_max)
+                                @if($exam->theory_max > 0)
                                     <th>Theory</th>
                                 @endif
-                                @if($exam->practical_max)
+                                @if($exam->has_practical && $exam->practical_max > 0)
                                     <th>Practical</th>
                                 @endif
                                 <th>Total</th>
@@ -185,13 +185,13 @@
                                     <td>{{ $mark->student->roll_number }}</td>
                                     <td>{{ $mark->student->full_name }}</td>
                                     <td>{{ $mark->student->currentEnrollment->class->name ?? 'N/A' }}</td>
-                                    @if($exam->assess_max)
+                                    @if($exam->has_assessment && $exam->assess_max > 0)
                                         <td>{{ $mark->assess_marks ?? '-' }}</td>
                                     @endif
-                                    @if($exam->theory_max)
+                                    @if($exam->theory_max > 0)
                                         <td>{{ $mark->theory_marks ?? '-' }}</td>
                                     @endif
-                                    @if($exam->practical_max)
+                                    @if($exam->has_practical && $exam->practical_max > 0)
                                         <td>{{ $mark->practical_marks ?? '-' }}</td>
                                     @endif
                                     <td><strong>{{ $mark->total }}</strong></td>

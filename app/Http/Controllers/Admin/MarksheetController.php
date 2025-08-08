@@ -28,7 +28,7 @@ class MarksheetController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Exam::with(['academicYear', 'semester', 'class', 'subject'])
+        $query = Exam::with(['academicYear', 'class', 'subject'])
                      ->whereIn('result_status', ['published', 'locked']);
 
         // Search functionality
@@ -68,7 +68,7 @@ class MarksheetController extends Controller
                             ->with('error', 'Please select an exam first.');
         }
 
-        $exam = Exam::with(['academicYear', 'semester', 'class', 'subject', 'gradingScale'])
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
                     ->findOrFail($examId);
 
         if (!in_array($exam->result_status, ['published', 'locked'])) {
@@ -171,7 +171,7 @@ class MarksheetController extends Controller
         ]);
 
         $student = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])->findOrFail($validated['student_id']);
-        $exam = Exam::with(['academicYear', 'semester', 'class', 'subject', 'gradingScale'])
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
                     ->findOrFail($validated['exam_id']);
 
         // Get institute settings
@@ -274,7 +274,7 @@ class MarksheetController extends Controller
             'grading_scale_id' => 'nullable|exists:grading_scales,id',
         ]);
 
-        $exam = Exam::with(['academicYear', 'semester', 'class', 'subject', 'gradingScale'])
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
                     ->findOrFail($validated['exam_id']);
 
         // Use custom grading scale if provided, otherwise use exam's default
@@ -382,7 +382,7 @@ class MarksheetController extends Controller
         ]);
 
         $student = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])->findOrFail($validated['student_id']);
-        $exam = Exam::with(['academicYear', 'semester', 'class', 'subject', 'gradingScale'])
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
                     ->findOrFail($validated['exam_id']);
 
         // Get institute settings

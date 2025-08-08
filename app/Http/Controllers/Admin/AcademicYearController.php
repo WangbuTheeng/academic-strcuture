@@ -21,7 +21,7 @@ class AcademicYearController extends Controller
     public function index(Request $request)
     {
         // Ensure we're working with the current school's data
-        $query = AcademicYear::withCount(['enrollments', 'semesters', 'exams']);
+        $query = AcademicYear::withCount(['enrollments', 'exams']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -130,7 +130,7 @@ class AcademicYearController extends Controller
      */
     public function show(AcademicYear $academicYear)
     {
-        $academicYear->load(['enrollments.student', 'enrollments.class', 'enrollments.program', 'semesters', 'exams']);
+        $academicYear->load(['enrollments.student', 'enrollments.class', 'enrollments.program', 'exams']);
 
         return view('admin.academic.academic-years.show', compact('academicYear'));
     }

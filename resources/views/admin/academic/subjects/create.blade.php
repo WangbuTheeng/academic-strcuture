@@ -150,18 +150,21 @@
                                 <div class="form-group">
                                     <label>Options</label>
                                     <div class="form-check">
+                                        <input type="hidden" name="is_practical" value="0">
                                         <input type="checkbox" class="form-check-input" id="is_practical" name="is_practical" value="1" {{ old('is_practical') ? 'checked' : '' }}>
                                         <label class="form-check-label" for="is_practical">
                                             Has Practical Component
                                         </label>
                                     </div>
                                     <div class="form-check">
+                                        <input type="hidden" name="has_internal" value="0">
                                         <input type="checkbox" class="form-check-input" id="has_internal" name="has_internal" value="1" {{ old('has_internal', true) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="has_internal">
                                             Has Internal Assessment
                                         </label>
                                     </div>
                                     <div class="form-check">
+                                        <input type="hidden" name="is_active" value="0">
                                         <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
                                         <label class="form-check-label" for="is_active">
                                             Active

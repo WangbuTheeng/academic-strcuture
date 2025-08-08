@@ -184,10 +184,49 @@ class Mark extends Model
     }
 
     /**
+     * Check if student has failed in any component based on minimum passing marks.
+     */
+    public function hasFailedInComponents()
+    {
+        $exam = $this->exam;
+
+        // Check theory component
+        if ($exam->theory_max > 0 && $exam->theory_pass_marks > 0) {
+            if (($this->theory_marks ?? 0) < $exam->theory_pass_marks) {
+                return true;
+            }
+        }
+
+        // Check practical component
+        if ($exam->has_practical && $exam->practical_max > 0 && $exam->practical_pass_marks > 0) {
+            if (($this->practical_marks ?? 0) < $exam->practical_pass_marks) {
+                return true;
+            }
+        }
+
+        // Check assessment component
+        if ($exam->has_assessment && $exam->assess_max > 0 && $exam->assess_pass_marks > 0) {
+            if (($this->assess_marks ?? 0) < $exam->assess_pass_marks) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Calculate grade and GPA based on grading scale.
      */
     public function calculateGradeAndGPA()
     {
+        // First check if student failed in any component
+        if ($this->hasFailedInComponents()) {
+            $this->grade = 'N/G';
+            $this->gpa = 0.00;
+            $this->result = 'Fail';
+            return $this;
+        }
+
         $gradingScale = $this->exam->gradingScale ??
                        $this->exam->class->level->gradingScale ??
                        GradingScale::where('is_default', true)->first();

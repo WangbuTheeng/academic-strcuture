@@ -24,7 +24,7 @@ class MarkController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Exam::with(['academicYear', 'semester', 'class', 'subject'])
+        $query = Exam::with(['academicYear', 'class', 'subject'])
                      ->where('result_status', 'ongoing');
 
         // Filter by class if user is teacher
@@ -79,7 +79,7 @@ class MarkController extends Controller
                             ->with('error', 'Please select an exam first.');
         }
 
-        $exam = Exam::with(['academicYear', 'semester', 'class', 'subject', 'gradingScale'])
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
                     ->findOrFail($examId);
 
         if (!$exam->can_enter_marks) {
@@ -288,7 +288,7 @@ class MarkController extends Controller
     public function show(Exam $exam)
     {
         $exam->load([
-            'academicYear', 'semester', 'class', 'subject', 'gradingScale',
+            'academicYear', 'class', 'subject', 'gradingScale',
             'marks.student.currentEnrollment.class', 'marks.subject'
         ]);
 

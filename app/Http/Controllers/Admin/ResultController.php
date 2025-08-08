@@ -68,7 +68,7 @@ class ResultController extends Controller
      */
     public function show(Exam $exam)
     {
-        $exam->load(['academicYear', 'semester', 'class', 'subject', 'gradingScale']);
+        $exam->load(['academicYear', 'class', 'subject', 'gradingScale']);
 
         // Get marks with student details
         $marks = Mark::with(['student.currentEnrollment.class', 'subject'])
@@ -228,7 +228,7 @@ class ResultController extends Controller
      */
     public function summary(Exam $exam)
     {
-        $exam->load(['academicYear', 'semester', 'class', 'subject', 'gradingScale']);
+        $exam->load(['academicYear', 'class', 'subject', 'gradingScale']);
 
         // Get comprehensive statistics
         $marks = Mark::with(['student.currentEnrollment.class', 'subject'])

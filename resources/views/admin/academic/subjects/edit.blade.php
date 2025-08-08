@@ -147,7 +147,8 @@
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-check">
-                                                <input type="checkbox" name="is_practical" id="is_practical" class="form-check-input" 
+                                                <input type="hidden" name="is_practical" value="0">
+                                                <input type="checkbox" name="is_practical" id="is_practical" class="form-check-input"
                                                        value="1" {{ old('is_practical', $subject->is_practical) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="is_practical">
                                                     Has Practical
@@ -156,7 +157,8 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-check">
-                                                <input type="checkbox" name="has_internal" id="has_internal" class="form-check-input" 
+                                                <input type="hidden" name="has_internal" value="0">
+                                                <input type="checkbox" name="has_internal" id="has_internal" class="form-check-input"
                                                        value="1" {{ old('has_internal', $subject->has_internal) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="has_internal">
                                                     Has Internal Assessment
@@ -165,7 +167,8 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-check">
-                                                <input type="checkbox" name="is_active" id="is_active" class="form-check-input" 
+                                                <input type="hidden" name="is_active" value="0">
+                                                <input type="checkbox" name="is_active" id="is_active" class="form-check-input"
                                                        value="1" {{ old('is_active', $subject->is_active) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="is_active">
                                                     Active

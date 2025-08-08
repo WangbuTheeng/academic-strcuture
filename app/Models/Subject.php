@@ -17,11 +17,21 @@ class Subject extends Model
         'code',
         'credit_hours',
         'subject_type',
+        'max_theory',
+        'max_practical',
+        'max_assess',
+        'is_practical',
+        'has_internal',
         'is_active'
     ];
 
     protected $casts = [
         'credit_hours' => 'decimal:2',
+        'max_theory' => 'integer',
+        'max_practical' => 'integer',
+        'max_assess' => 'integer',
+        'is_practical' => 'boolean',
+        'has_internal' => 'boolean',
         'is_active' => 'boolean',
     ];
 

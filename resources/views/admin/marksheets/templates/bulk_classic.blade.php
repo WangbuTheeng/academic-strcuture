@@ -278,8 +278,8 @@
                     <span class="info-value">{{ $exam->academicYear->name ?? 'N/A' }}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Semester:</span>
-                    <span class="info-value">{{ $exam->semester->name ?? 'N/A' }}</span>
+                    <span class="info-label">Exam Type:</span>
+                    <span class="info-value">{{ ucfirst($exam->exam_type) ?? 'N/A' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Date:</span>

@@ -65,7 +65,6 @@
                                 <th>End Date</th>
                                 <th>Status</th>
                                 <th>Enrollments</th>
-                                <th>Semesters</th>
                                 <th>Exams</th>
                                 <th width="150">Actions</th>
                             </tr>
@@ -93,7 +92,6 @@
                                     @endif
                                 </td>
                                 <td>{{ $academicYear->enrollments_count ?? 0 }}</td>
-                                <td>{{ $academicYear->semesters_count ?? 0 }}</td>
                                 <td>{{ $academicYear->exams_count ?? 0 }}</td>
                                 <td>
                                     <div class="btn-group" role="group">

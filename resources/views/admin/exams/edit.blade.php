@@ -50,7 +50,8 @@
                     <div class="col-md-6 mb-3">
                         <label for="exam_type" class="form-label">Exam Type *</label>
                         <select name="exam_type" id="exam_type" required
-                                class="form-select @error('exam_type') is-invalid @enderror">
+                                class="form-select @error('exam_type') is-invalid @enderror"
+                                onchange="toggleCustomExamType()">
                             <option value="">Select Exam Type</option>
                             <option value="assessment" {{ old('exam_type', $exam->exam_type) === 'assessment' ? 'selected' : '' }}>Assessment</option>
                             <option value="terminal" {{ old('exam_type', $exam->exam_type) === 'terminal' ? 'selected' : '' }}>Terminal Exam</option>
@@ -58,7 +59,25 @@
                             <option value="project" {{ old('exam_type', $exam->exam_type) === 'project' ? 'selected' : '' }}>Project</option>
                             <option value="practical" {{ old('exam_type', $exam->exam_type) === 'practical' ? 'selected' : '' }}>Practical</option>
                             <option value="final" {{ old('exam_type', $exam->exam_type) === 'final' ? 'selected' : '' }}>Final Exam</option>
+                            @php
+                                $isCustomType = !in_array($exam->exam_type, ['assessment', 'terminal', 'quiz', 'project', 'practical', 'final']);
+                            @endphp
+                            <option value="custom" {{ old('exam_type') === 'custom' || $isCustomType ? 'selected' : '' }}>Custom (Write Your Own)</option>
                         </select>
+
+                        <!-- Custom Exam Type Input -->
+                        <div id="custom-exam-type-container" class="mt-2" style="display: {{ old('exam_type') === 'custom' || $isCustomType ? 'block' : 'none' }};">
+                            <input type="text" name="custom_exam_type" id="custom_exam_type"
+                                   class="form-control @error('custom_exam_type') is-invalid @enderror"
+                                   placeholder="Enter custom exam type (e.g., Unit Test, Monthly Test, etc.)"
+                                   value="{{ old('custom_exam_type', $isCustomType ? $exam->exam_type : '') }}"
+                                   maxlength="50">
+                            <small class="text-muted">Enter your custom exam type name (max 50 characters)</small>
+                            @error('custom_exam_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         @error('exam_type')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -84,17 +103,17 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label for="semester_id" class="form-label">Semester</label>
-                        <select name="semester_id" id="semester_id"
-                                class="form-select @error('semester_id') is-invalid @enderror">
-                            <option value="">Select Semester (Optional)</option>
-                            @foreach($semesters as $semester)
-                                <option value="{{ $semester->id }}" {{ old('semester_id', $exam->semester_id) == $semester->id ? 'selected' : '' }}>
-                                    {{ $semester->name }} ({{ $semester->academicYear->name }})
-                                </option>
-                            @endforeach
+                        <label for="exam_type" class="form-label">Exam Type</label>
+                        <select name="exam_type" id="exam_type"
+                                class="form-select @error('exam_type') is-invalid @enderror" required>
+                            <option value="">Select Exam Type</option>
+                            <option value="terminal" {{ old('exam_type', $exam->exam_type) == 'terminal' ? 'selected' : '' }}>Terminal Exam</option>
+                            <option value="final" {{ old('exam_type', $exam->exam_type) == 'final' ? 'selected' : '' }}>Final Exam</option>
+                            <option value="midterm" {{ old('exam_type', $exam->exam_type) == 'midterm' ? 'selected' : '' }}>Midterm Exam</option>
+                            <option value="unit" {{ old('exam_type', $exam->exam_type) == 'unit' ? 'selected' : '' }}>Unit Test</option>
+                            <option value="monthly" {{ old('exam_type', $exam->exam_type) == 'monthly' ? 'selected' : '' }}>Monthly Test</option>
                         </select>
-                        @error('semester_id')
+                        @error('exam_type')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -152,44 +171,87 @@
 
                     <div class="col-md-6 mb-3">
                         <label for="theory_max" class="form-label">Theory Marks *</label>
-                        <input type="number" name="theory_max" id="theory_max" value="{{ old('theory_max', $exam->theory_max) }}"
-                               min="0" step="0.01" required
-                               class="form-control @error('theory_max') is-invalid @enderror">
-                        @error('theory_max')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" name="theory_max" id="theory_max" value="{{ old('theory_max', $exam->theory_max) }}"
+                                       min="0" step="0.01" required
+                                       class="form-control @error('theory_max') is-invalid @enderror"
+                                       placeholder="Max marks">
+                                @error('theory_max')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="theory_pass_marks" id="theory_pass_marks" value="{{ old('theory_pass_marks', $exam->theory_pass_marks) }}"
+                                       min="0" step="0.01"
+                                       class="form-control @error('theory_pass_marks') is-invalid @enderror"
+                                       placeholder="Pass marks">
+                                @error('theory_pass_marks')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <small class="text-muted">Max marks / Minimum passing marks</small>
                     </div>
                 </div>
 
                 <div class="row mb-4">
                     <div class="col-md-6 mb-3">
+                        <label class="form-label">Practical Marks</label>
                         <div class="form-check mb-2">
                             <input type="checkbox" name="has_practical" id="has_practical" value="1"
                                    {{ old('has_practical', $exam->has_practical) ? 'checked' : '' }}
                                    class="form-check-input">
                             <label for="has_practical" class="form-check-label">Has Practical Component</label>
                         </div>
-                        <input type="number" name="practical_max" id="practical_max" value="{{ old('practical_max', $exam->practical_max) }}"
-                               min="0" step="0.01" placeholder="Practical marks"
-                               class="form-control @error('practical_max') is-invalid @enderror">
-                        @error('practical_max')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" name="practical_max" id="practical_max" value="{{ old('practical_max', $exam->practical_max) }}"
+                                       min="0" step="0.01" placeholder="Max marks"
+                                       class="form-control @error('practical_max') is-invalid @enderror">
+                                @error('practical_max')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="practical_pass_marks" id="practical_pass_marks" value="{{ old('practical_pass_marks', $exam->practical_pass_marks) }}"
+                                       min="0" step="0.01" placeholder="Pass marks"
+                                       class="form-control @error('practical_pass_marks') is-invalid @enderror">
+                                @error('practical_pass_marks')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <small class="text-muted">Max marks / Minimum passing marks</small>
                     </div>
 
                     <div class="col-md-6 mb-3">
+                        <label class="form-label">Assessment Marks</label>
                         <div class="form-check mb-2">
                             <input type="checkbox" name="has_assessment" id="has_assessment" value="1"
                                    {{ old('has_assessment', $exam->has_assessment) ? 'checked' : '' }}
                                    class="form-check-input">
                             <label for="has_assessment" class="form-check-label">Has Assessment Component</label>
                         </div>
-                        <input type="number" name="assess_max" id="assess_max" value="{{ old('assess_max', $exam->assess_max) }}"
-                               min="0" step="0.01" placeholder="Assessment marks"
-                               class="form-control @error('assess_max') is-invalid @enderror">
-                        @error('assess_max')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="number" name="assess_max" id="assess_max" value="{{ old('assess_max', $exam->assess_max) }}"
+                                       min="0" step="0.01" placeholder="Max marks"
+                                       class="form-control @error('assess_max') is-invalid @enderror">
+                                @error('assess_max')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="assess_pass_marks" id="assess_pass_marks" value="{{ old('assess_pass_marks', $exam->assess_pass_marks) }}"
+                                       min="0" step="0.01" placeholder="Pass marks"
+                                       class="form-control @error('assess_pass_marks') is-invalid @enderror">
+                                @error('assess_pass_marks')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <small class="text-muted">Max marks / Minimum passing marks</small>
                     </div>
                 </div>
 
@@ -303,6 +365,22 @@
             }
         });
 
+        function toggleCustomExamType() {
+            const select = document.getElementById('exam_type');
+            const container = document.getElementById('custom-exam-type-container');
+            const customInput = document.getElementById('custom_exam_type');
+
+            if (select.value === 'custom') {
+                container.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                container.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
         // Initialize disabled state
         if (!document.getElementById('has_practical').checked) {
             document.getElementById('practical_max').setAttribute('disabled', 'disabled');
@@ -310,6 +388,9 @@
         if (!document.getElementById('has_assessment').checked) {
             document.getElementById('assess_max').setAttribute('disabled', 'disabled');
         }
+
+        // Initialize custom exam type visibility
+        toggleCustomExamType();
     </script>
 @endpush
 

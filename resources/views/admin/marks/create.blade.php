@@ -141,14 +141,14 @@
                                 <th>Roll No.</th>
                                 <th>Student Name</th>
                                 <th>Class</th>
-                                @if($exam->assess_max)
-                                    <th>Assessment<br><small>(Max: {{ $exam->assess_max }})</small></th>
+                                @if($exam->has_assessment && $exam->assess_max > 0)
+                                    <th>Assessment<br><small>(Max: {{ $exam->assess_max }}@if($exam->assess_pass_marks > 0), Pass: {{ $exam->assess_pass_marks }}@endif)</small></th>
                                 @endif
-                                @if($exam->theory_max)
-                                    <th>Theory<br><small>(Max: {{ $exam->theory_max }})</small></th>
+                                @if($exam->theory_max > 0)
+                                    <th>Theory<br><small>(Max: {{ $exam->theory_max }}@if($exam->theory_pass_marks > 0), Pass: {{ $exam->theory_pass_marks }}@endif)</small></th>
                                 @endif
-                                @if($exam->practical_max)
-                                    <th>Practical<br><small>(Max: {{ $exam->practical_max }})</small></th>
+                                @if($exam->has_practical && $exam->practical_max > 0)
+                                    <th>Practical<br><small>(Max: {{ $exam->practical_max }}@if($exam->practical_pass_marks > 0), Pass: {{ $exam->practical_pass_marks }}@endif)</small></th>
                                 @endif
                                 <th>Total</th>
                                 <th>Percentage</th>
@@ -169,7 +169,7 @@
                                     
                                     <input type="hidden" name="marks[{{ $loop->index }}][student_id]" value="{{ $student->id }}">
                                     
-                                    @if($exam->assess_max)
+                                    @if($exam->has_assessment && $exam->assess_max > 0)
                                         <td>
                                             <input type="number"
                                                    name="marks[{{ $loop->index }}][assess_marks]"
@@ -182,8 +182,8 @@
                                                    placeholder="0.00">
                                         </td>
                                     @endif
-                                    
-                                    @if($exam->theory_max)
+
+                                    @if($exam->theory_max > 0)
                                         <td>
                                             <input type="number"
                                                    name="marks[{{ $loop->index }}][theory_marks]"
@@ -196,8 +196,8 @@
                                                    placeholder="0.00">
                                         </td>
                                     @endif
-                                    
-                                    @if($exam->practical_max)
+
+                                    @if($exam->has_practical && $exam->practical_max > 0)
                                         <td>
                                             <input type="number"
                                                    name="marks[{{ $loop->index }}][practical_marks]"

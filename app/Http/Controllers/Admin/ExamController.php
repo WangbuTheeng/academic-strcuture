@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\AcademicYear;
-use App\Models\Semester;
 use App\Models\ClassModel;
 use App\Models\Program;
 use App\Models\Subject;
@@ -25,7 +24,7 @@ class ExamController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Exam::with(['academicYear', 'semester', 'class', 'program', 'subject', 'creator']);
+        $query = Exam::with(['academicYear', 'class', 'program', 'subject', 'creator']);
 
         // Search functionality
         if ($request->filled('search')) {
@@ -86,16 +85,20 @@ class ExamController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:200',
-            'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final',
+            'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final,custom',
+            'custom_exam_type' => 'required_if:exam_type,custom|nullable|string|max:50',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'semester_id' => 'nullable|exists:semesters,id',
+
             'class_id' => 'nullable|exists:classes,id',
             'program_id' => 'nullable|exists:programs,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'max_marks' => 'required|numeric|min:1|max:1000',
             'theory_max' => 'required|numeric|min:0',
+            'theory_pass_marks' => 'nullable|numeric|min:0|lte:theory_max',
             'practical_max' => 'nullable|numeric|min:0',
+            'practical_pass_marks' => 'nullable|numeric|min:0|lte:practical_max',
             'assess_max' => 'nullable|numeric|min:0',
+            'assess_pass_marks' => 'nullable|numeric|min:0|lte:assess_max',
             'has_practical' => 'boolean',
             'has_assessment' => 'boolean',
             'start_date' => 'required|date|after_or_equal:today',
@@ -115,6 +118,14 @@ class ExamController extends Controller
             ])->withInput();
         }
 
+        // Handle custom exam type
+        if ($validated['exam_type'] === 'custom') {
+            $validated['exam_type'] = $validated['custom_exam_type'];
+        }
+
+        // Remove custom_exam_type from validated data as it's not a database field
+        unset($validated['custom_exam_type']);
+
         $validated['created_by'] = auth()->id();
         $validated['status'] = 'draft';
 
@@ -130,7 +141,7 @@ class ExamController extends Controller
     public function show(Exam $exam)
     {
         $exam->load([
-            'academicYear', 'semester', 'class', 'program', 'subject',
+            'academicYear', 'class', 'program', 'subject',
             'gradingScale', 'creator', 'approver', 'publisher',
             'marks.student'
         ]);
@@ -181,16 +192,20 @@ class ExamController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:200',
-            'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final',
+            'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final,custom',
+            'custom_exam_type' => 'required_if:exam_type,custom|nullable|string|max:50',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'semester_id' => 'nullable|exists:semesters,id',
+
             'class_id' => 'nullable|exists:classes,id',
             'program_id' => 'nullable|exists:programs,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'max_marks' => 'required|numeric|min:1|max:1000',
             'theory_max' => 'required|numeric|min:0',
+            'theory_pass_marks' => 'nullable|numeric|min:0|lte:theory_max',
             'practical_max' => 'nullable|numeric|min:0',
+            'practical_pass_marks' => 'nullable|numeric|min:0|lte:practical_max',
             'assess_max' => 'nullable|numeric|min:0',
+            'assess_pass_marks' => 'nullable|numeric|min:0|lte:assess_max',
             'has_practical' => 'boolean',
             'has_assessment' => 'boolean',
             'start_date' => 'required|date',
@@ -209,6 +224,14 @@ class ExamController extends Controller
                 'max_marks' => 'The sum of theory, practical, and assessment marks must equal the maximum marks.'
             ])->withInput();
         }
+
+        // Handle custom exam type
+        if ($validated['exam_type'] === 'custom') {
+            $validated['exam_type'] = $validated['custom_exam_type'];
+        }
+
+        // Remove custom_exam_type from validated data as it's not a database field
+        unset($validated['custom_exam_type']);
 
         $exam->update($validated);
 

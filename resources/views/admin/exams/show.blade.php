@@ -16,7 +16,19 @@
                     <li class="breadcrumb-item active">{{ $exam->name }}</li>
                 </ol>
             </nav>
-            <p class="text-muted">{{ $exam->subject->name ?? 'All Subjects' }} - {{ $exam->class->name ?? 'All Classes' }}</p>
+            <div class="text-muted">
+                @if($exam->program)
+                    <span class="badge bg-primary me-2">{{ $exam->program->name }}</span>
+                @endif
+                @if($exam->class)
+                    <span class="badge bg-info me-2">{{ $exam->class->name }}</span>
+                @endif
+                @if($exam->subject)
+                    <span class="badge bg-success">{{ $exam->subject->name }}</span>
+                @else
+                    <span class="badge bg-secondary">All Subjects</span>
+                @endif
+            </div>
         </div>
         <div>
             @if($exam->is_editable)
@@ -65,10 +77,34 @@
                     <p class="mb-0">{{ $exam->academicYear->name }}</p>
                 </div>
 
-                @if($exam->semester)
+                @if($exam->program)
                 <div class="col-md-4 mb-3">
-                    <label class="form-label text-muted">Semester</label>
-                    <p class="mb-0">{{ $exam->semester->name }}</p>
+                    <label class="form-label text-muted">Program</label>
+                    <p class="mb-0">{{ $exam->program->name }}</p>
+                </div>
+                @endif
+
+                @if($exam->class)
+                <div class="col-md-4 mb-3">
+                    <label class="form-label text-muted">Class</label>
+                    <p class="mb-0">{{ $exam->class->name }}</p>
+                </div>
+                @endif
+
+                @if($exam->subject)
+                <div class="col-md-4 mb-3">
+                    <label class="form-label text-muted">Subject</label>
+                    <p class="mb-0">{{ $exam->subject->name }}</p>
+                </div>
+                @else
+                <div class="col-md-4 mb-3">
+                    <label class="form-label text-muted">Subject Coverage</label>
+                    <p class="mb-0">
+                        <span class="badge bg-secondary">All Subjects</span>
+                        @if($exam->class)
+                            <small class="text-muted d-block">For {{ $exam->class->name }}</small>
+                        @endif
+                    </p>
                 </div>
                 @endif
 
@@ -137,6 +173,82 @@
                     </div>
                 </div>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Exam Scope Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Exam Scope & Coverage</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Program Coverage</h6>
+                            <h4 class="mb-0">
+                                @if($exam->program)
+                                    1 Program
+                                @else
+                                    All Programs
+                                @endif
+                            </h4>
+                            @if($exam->program)
+                                <small class="text-muted">{{ $exam->program->name }}</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Class Coverage</h6>
+                            <h4 class="mb-0">
+                                @if($exam->class)
+                                    1 Class
+                                @else
+                                    All Classes
+                                @endif
+                            </h4>
+                            @if($exam->class)
+                                <small class="text-muted">{{ $exam->class->name }}</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Subject Coverage</h6>
+                            <h4 class="mb-0">
+                                @if($exam->subject)
+                                    1 Subject
+                                @else
+                                    @php
+                                        $subjectCount = 0;
+                                        if ($exam->class_id) {
+                                            $subjectCount = \App\Models\Subject::whereHas('classes', function($query) use ($exam) {
+                                                $query->where('class_id', $exam->class_id);
+                                            })->count();
+                                        } else {
+                                            $subjectCount = \App\Models\Subject::where('is_active', true)->count();
+                                        }
+                                    @endphp
+                                    {{ $subjectCount }} Subjects
+                                @endif
+                            </h4>
+                            @if($exam->subject)
+                                <small class="text-muted">{{ $exam->subject->name }}</small>
+                            @else
+                                <small class="text-muted">Multiple subjects</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -142,6 +142,7 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
 
     // Subject management routes
     Route::resource('subjects', \App\Http\Controllers\Admin\SubjectController::class);
+    Route::patch('subjects/{subject}/update-status', [\App\Http\Controllers\Admin\SubjectController::class, 'updateStatus'])->name('subjects.update-status');
     Route::post('subjects/bulk-action', [\App\Http\Controllers\Admin\SubjectController::class, 'bulkAction'])->name('subjects.bulk-action');
 
     // Teacher-Subject assignment routes
@@ -414,6 +415,11 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::post('/bulk-approve', [\App\Http\Controllers\Admin\GraceMarkController::class, 'bulkApprove'])->name('bulk-approve');
         Route::get('/reports/summary', [\App\Http\Controllers\Admin\GraceMarkController::class, 'report'])->name('report');
     });
+
+    // Test route for responsive sub-navbar
+    Route::get('/test-responsive', function () {
+        return view('admin.reports.test-responsive');
+    })->name('test-responsive');
 
     // Academic Settings routes
     Route::prefix('academic-settings')->name('academic-settings.')->group(function () {
