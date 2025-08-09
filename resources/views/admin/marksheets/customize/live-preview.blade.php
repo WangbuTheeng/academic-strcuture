@@ -96,7 +96,7 @@
             <!-- School Header -->
             <div class="marksheet-header">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-                    @if(($settings['show_school_logo'] ?? true) && $instituteSettings->institution_logo)
+                    @if(($settings['show_school_logo'] ?? true) && $instituteSettings && isset($instituteSettings->institution_logo) && $instituteSettings->institution_logo)
                         <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" class="school-logo">
                     @endif
                     

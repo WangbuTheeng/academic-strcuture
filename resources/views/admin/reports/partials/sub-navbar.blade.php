@@ -93,12 +93,6 @@
                                 <li><a class="dropdown-item" href="{{ route('admin.academic-settings.levels') }}">
                                     <i class="fas fa-layer-group me-2"></i>Academic Levels
                                 </a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.academic-settings.programs') }}">
-                                    <i class="fas fa-graduation-cap me-2"></i>Programs
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.academic-settings.subjects') }}">
-                                    <i class="fas fa-book me-2"></i>Subjects
-                                </a></li>
                             </ul>
                         </li>
                         
@@ -167,6 +161,10 @@
 </div>
 
 <style>
+.card.shadow-sm {
+    position: relative;
+    z-index: 20;
+}
 /* Responsive Navigation Styles */
 .nav-link.active {
     color: #0d6efd !important;
@@ -190,6 +188,7 @@
 
 .navbar-nav .nav-link:hover {
     background-color: rgba(13, 110, 253, 0.05);
+    color: #0d6efd !important;
 }
 
 /* Mobile optimizations */

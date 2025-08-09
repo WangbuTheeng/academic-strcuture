@@ -48,7 +48,12 @@
 
         .institution-address {
             font-size: 14px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
+        }
+
+        .institution-contact {
+            font-size: 12px;
+            margin-bottom: 3px;
         }
 
         .marksheet-title {
@@ -240,8 +245,17 @@
     <div class="marksheet">
         <!-- Header -->
         <div class="header">
-            <div class="institution-name">Academic Management System</div>
-            <div class="institution-address">Excellence in Education | Kathmandu, Nepal</div>
+            @if($instituteSettings && $instituteSettings->institution_logo)
+                <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" style="width: 60px; height: 60px; margin: 0 auto 10px; display: block;">
+            @endif
+            <div class="institution-name">{{ $instituteSettings ? $instituteSettings->institution_name : 'Academic Management System' }}</div>
+            <div class="institution-address">{{ $instituteSettings ? $instituteSettings->institution_address : 'Excellence in Education | Kathmandu, Nepal' }}</div>
+            @if($instituteSettings && $instituteSettings->institution_phone)
+                <div class="institution-contact">Phone: {{ $instituteSettings->institution_phone }}</div>
+            @endif
+            @if($instituteSettings && $instituteSettings->institution_email)
+                <div class="institution-contact">Email: {{ $instituteSettings->institution_email }}</div>
+            @endif
             <div class="marksheet-title">Academic Marksheet</div>
         </div>
 

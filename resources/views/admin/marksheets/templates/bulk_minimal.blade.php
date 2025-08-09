@@ -182,7 +182,10 @@
     <div class="marksheet">
         <!-- Header -->
         <div class="header">
-            <div class="institution-name">Academic Management System</div>
+            @if($instituteSettings && $instituteSettings->institution_logo)
+                <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" style="width: 50px; height: 50px; margin: 0 auto 10px; display: block;">
+            @endif
+            <div class="institution-name">{{ $instituteSettings ? $instituteSettings->institution_name : 'Academic Management System' }}</div>
             <div class="marksheet-title">Academic Marksheet</div>
         </div>
 

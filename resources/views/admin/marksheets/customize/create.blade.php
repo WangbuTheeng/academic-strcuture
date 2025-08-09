@@ -3,7 +3,8 @@
 @section('title', 'Create Marksheet Template')
 @section('page-title', 'Create Marksheet Template')
 
-@section('content')
+@section('content') 
+@include('admin.reports.partials.sub-navbar')
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">

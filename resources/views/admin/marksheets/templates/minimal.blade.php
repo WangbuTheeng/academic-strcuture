@@ -39,6 +39,11 @@
             margin-bottom: 3px;
         }
 
+        .institution-contact {
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+
         .marksheet-title {
             font-size: 14px;
             font-weight: bold;
@@ -176,7 +181,20 @@
     <div class="marksheet">
         <!-- Header -->
         <div class="header">
-            <div class="institution-name">{{ (isset($instituteSettings) && $instituteSettings) ? $instituteSettings->institution_name : 'Academic Management System' }}</div>
+            @if($instituteSettings && (is_object($instituteSettings) ? $instituteSettings->institution_logo : ($instituteSettings['institution_logo'] ?? null)))
+                <img src="{{ is_object($instituteSettings) ? $instituteSettings->getLogoUrl() : asset('storage/' . $instituteSettings['institution_logo']) }}" alt="School Logo" style="width: 50px; height: 50px; margin: 0 auto 5px; display: block;">
+            @endif
+            <div class="institution-name">{{ (isset($instituteSettings) && $instituteSettings) ? (is_object($instituteSettings) ? $instituteSettings->institution_name : ($instituteSettings['institution_name'] ?? 'Academic Management System')) : 'Academic Management System' }}</div>
+            @php
+                $phone = (isset($instituteSettings) && $instituteSettings) ? (is_object($instituteSettings) ? $instituteSettings->institution_phone : ($instituteSettings['institution_phone'] ?? null)) : null;
+                $email = (isset($instituteSettings) && $instituteSettings) ? (is_object($instituteSettings) ? $instituteSettings->institution_email : ($instituteSettings['institution_email'] ?? null)) : null;
+            @endphp
+            @if($phone)
+                <div class="institution-contact">Phone: {{ $phone }}</div>
+            @endif
+            @if($email)
+                <div class="institution-contact">Email: {{ $email }}</div>
+            @endif
             <div class="marksheet-title">Academic Marksheet</div>
         </div>
 

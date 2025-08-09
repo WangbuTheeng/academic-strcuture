@@ -56,14 +56,26 @@
                                 <div class="row">
                                     <div class="col-md-3 text-center">
                                         <div class="draggable-element" data-element="logo">
-                                            <i class="fas fa-image fa-2x text-muted"></i>
+                                            @if($instituteSettings && $instituteSettings->institution_logo)
+                                                <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" style="max-height: 60px; max-width: 80px;">
+                                            @else
+                                                <i class="fas fa-image fa-2x text-muted"></i>
+                                            @endif
                                             <p class="small mb-0">School Logo</p>
                                         </div>
                                     </div>
                                     <div class="col-md-6 text-center">
                                         <div class="draggable-element" data-element="school-info">
-                                            <h5 class="mb-1">School Name</h5>
-                                            <p class="small mb-0">Address, Phone, Email</p>
+                                            <h5 class="mb-1">{{ $instituteSettings ? $instituteSettings->institution_name : 'School Name' }}</h5>
+                                            <p class="small mb-0">
+                                                {{ $instituteSettings ? $instituteSettings->institution_address : 'Address' }}
+                                                @if($instituteSettings && ($instituteSettings->institution_phone || $instituteSettings->institution_email))
+                                                    <br>
+                                                    @if($instituteSettings->institution_phone){{ $instituteSettings->institution_phone }}@endif
+                                                    @if($instituteSettings->institution_phone && $instituteSettings->institution_email) | @endif
+                                                    @if($instituteSettings->institution_email){{ $instituteSettings->institution_email }}@endif
+                                                @endif
+                                            </p>
                                         </div>
                                     </div>
                                     <div class="col-md-3 text-center">
@@ -288,6 +300,44 @@
                 </div>
             </div>
 
+            <!-- Existing Templates -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Existing Templates</h6>
+                </div>
+                <div class="card-body">
+                    @if($templates && $templates->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($templates as $template)
+                                <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                    <div>
+                                        <h6 class="mb-1">{{ $template->name }}</h6>
+                                        <small class="text-muted">
+                                            {{ $template->template_type }}
+                                            @if($template->is_global)
+                                                <span class="badge bg-info">Global</span>
+                                            @else
+                                                <span class="badge bg-primary">School</span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadExistingTemplate({{ $template->id }})">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                        <a href="{{ route('admin.marksheets.customize.preview', $template) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">No templates available. Create your first template!</p>
+                    @endif
+                </div>
+            </div>
+
             <!-- Quick Actions -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -295,14 +345,14 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-outline-primary" onclick="loadTemplate()">
-                            <i class="fas fa-upload"></i> Load Template
-                        </button>
                         <button type="button" class="btn btn-outline-success" onclick="exportTemplate()">
                             <i class="fas fa-download"></i> Export Template
                         </button>
                         <button type="button" class="btn btn-outline-info" onclick="duplicateTemplate()">
                             <i class="fas fa-copy"></i> Duplicate Template
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetTemplate()">
+                            <i class="fas fa-undo"></i> Reset Template
                         </button>
                     </div>
                 </div>
@@ -416,15 +466,68 @@
 #template-canvas {
     font-family: Arial, sans-serif;
     font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+/* Template orientation styles */
+#template-canvas.portrait {
+    max-width: 700px;
+    aspect-ratio: 8.5/11; /* A4 portrait ratio */
+}
+
+#template-canvas.landscape {
+    max-width: 1000px;
+    aspect-ratio: 11/8.5; /* A4 landscape ratio */
+}
+
+/* Smooth transitions for preview updates */
+.template-section .section-header h6 {
+    transition: color 0.3s ease;
+}
+
+#table-headers th {
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDragAndDrop();
-    initializeTableConfiguration();
-    initializeTemplateSettings();
+    console.log('DOM loaded, initializing drag-drop builder...');
+
+    // Check if required elements exist
+    const requiredElements = [
+        'template-name',
+        'template-canvas',
+        'table-headers',
+        'page-orientation',
+        'font-family',
+        'font-size',
+        'primary-color',
+        'secondary-color'
+    ];
+
+    const missingElements = [];
+    requiredElements.forEach(id => {
+        if (!document.getElementById(id)) {
+            missingElements.push(id);
+        }
+    });
+
+    if (missingElements.length > 0) {
+        console.warn('Missing elements:', missingElements);
+    } else {
+        console.log('All required elements found');
+    }
+
+    try {
+        initializeDragAndDrop();
+        initializeTableConfiguration();
+        initializeTemplateSettings();
+        console.log('Initialization complete');
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
 });
 
 function initializeDragAndDrop() {
@@ -503,28 +606,23 @@ function initializeTableConfiguration() {
 
 function initializeTemplateSettings() {
     // Apply settings changes in real-time
-    document.getElementById('font-family').addEventListener('change', function() {
-        document.getElementById('template-canvas').style.fontFamily = this.value;
-    });
+    const settingsElements = [
+        'font-family',
+        'font-size',
+        'primary-color',
+        'secondary-color',
+        'page-orientation'
+    ];
 
-    document.getElementById('font-size').addEventListener('change', function() {
-        document.getElementById('template-canvas').style.fontSize = this.value;
-    });
-
-    document.getElementById('primary-color').addEventListener('change', function() {
-        document.documentElement.style.setProperty('--bs-primary', this.value);
-    });
-
-    document.getElementById('page-orientation').addEventListener('change', function() {
-        const canvas = document.getElementById('template-canvas');
-        if (this.value === 'landscape') {
-            canvas.style.width = '100%';
-            canvas.style.maxWidth = '1000px';
-        } else {
-            canvas.style.width = '100%';
-            canvas.style.maxWidth = '700px';
+    settingsElements.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.addEventListener('change', updateTemplatePreview);
         }
     });
+
+    // Initial preview update
+    updateTemplatePreview();
 }
 
 function toggleSection(sectionId) {
@@ -601,6 +699,57 @@ function updateTablePreview() {
     console.log('Table preview updated with', headers.length, 'columns');
 }
 
+function updateTemplatePreview() {
+    try {
+        // Get current settings
+        const fontFamily = document.getElementById('font-family')?.value || 'Arial';
+        const fontSize = document.getElementById('font-size')?.value || '12px';
+        const primaryColor = document.getElementById('primary-color')?.value || '#0d6efd';
+        const secondaryColor = document.getElementById('secondary-color')?.value || '#6c757d';
+        const orientation = document.getElementById('page-orientation')?.value || 'portrait';
+
+        // Apply styles to template canvas
+        const templateCanvas = document.getElementById('template-canvas');
+        if (templateCanvas) {
+            templateCanvas.style.fontFamily = fontFamily;
+            templateCanvas.style.fontSize = fontSize;
+
+            // Update orientation class
+            templateCanvas.classList.remove('portrait', 'landscape');
+            templateCanvas.classList.add(orientation);
+        }
+
+        // Update header colors
+        const headers = document.querySelectorAll('.template-section .section-header h6');
+        headers.forEach(header => {
+            header.style.color = primaryColor;
+        });
+
+        // Update table header colors
+        const tableHeaders = document.querySelectorAll('#table-headers th');
+        tableHeaders.forEach(th => {
+            th.style.backgroundColor = primaryColor;
+            th.style.color = '#ffffff';
+        });
+
+        // Update text colors
+        const textElements = document.querySelectorAll('.template-section .section-content');
+        textElements.forEach(element => {
+            element.style.color = secondaryColor;
+        });
+
+        console.log('Template preview updated with:', {
+            fontFamily,
+            fontSize,
+            primaryColor,
+            secondaryColor,
+            orientation
+        });
+    } catch (error) {
+        console.error('Error updating template preview:', error);
+    }
+}
+
 function previewTemplate() {
     // Generate preview in a new window
     const templateContent = document.getElementById('template-canvas').innerHTML;
@@ -630,62 +779,140 @@ function previewTemplate() {
 }
 
 function saveTemplate() {
-    const templateData = {
-        name: document.getElementById('template-name').value,
-        orientation: document.getElementById('page-orientation').value,
-        fontFamily: document.getElementById('font-family').value,
-        fontSize: document.getElementById('font-size').value,
-        primaryColor: document.getElementById('primary-color').value,
-        secondaryColor: document.getElementById('secondary-color').value,
-        sections: getSectionConfiguration(),
-        tableColumns: getTableConfiguration()
-    };
+    console.log('saveTemplate function called');
 
-    // Send to server
-    fetch('{{ route("admin.marksheets.customize.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(templateData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Template saved successfully!');
-        } else {
-            alert('Error saving template: ' + data.message);
+    try {
+        const templateNameInput = document.getElementById('template-name');
+        console.log('Template name input:', templateNameInput);
+        console.log('Template name value:', templateNameInput?.value);
+
+        if (!templateNameInput || !templateNameInput.value.trim()) {
+            alert('Please enter a template name');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving template');
-    });
+
+        console.log('Collecting template data...');
+
+        const templateData = {
+            name: templateNameInput.value,
+            description: 'Created with Drag & Drop Builder',
+            template_type: 'custom',
+            grading_scale_id: 1, // Default grading scale
+            orientation: document.getElementById('page-orientation')?.value || 'portrait',
+            fontFamily: document.getElementById('font-family')?.value || 'Arial',
+            fontSize: document.getElementById('font-size')?.value || '12',
+            primaryColor: document.getElementById('primary-color')?.value || '#000000',
+            secondaryColor: document.getElementById('secondary-color')?.value || '#666666',
+            sections: getSectionConfiguration(),
+            tableColumns: getTableConfiguration(),
+            settings: {
+                show_school_logo: true,
+                show_school_name: true,
+                show_school_address: true,
+                show_contact_info: true,
+                show_principal_name: true,
+                show_theory_practical: true,
+                show_assessment_marks: true,
+                show_remarks: true,
+                show_grade_points: true,
+                header_color: document.getElementById('primary-color')?.value || '#000000',
+                text_color: '#1f2937',
+                border_style: 'solid',
+                font_family: document.getElementById('font-family')?.value || 'Arial',
+                font_size: document.getElementById('font-size')?.value || '12'
+            }
+        };
+
+        console.log('Template data collected:', templateData);
+
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            alert('CSRF token not found. Please refresh the page.');
+            return;
+        }
+
+        console.log('Sending template data to server...');
+
+        // Send to server
+        fetch('{{ route("admin.marksheets.customize.store") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(templateData)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Response text:', text);
+                    throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('Template saved successfully!');
+                // Optionally redirect to the templates list
+                window.location.href = '{{ route("admin.marksheets.customize.index") }}';
+            } else {
+                alert('Error saving template: ' + (data.message || 'Unknown error'));
+                if (data.errors) {
+                    console.error('Validation errors:', data.errors);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('Error saving template: ' + error.message);
+        });
+
+    } catch (error) {
+        console.error('Error in saveTemplate:', error);
+        alert('Error saving template: ' + error.message);
+    }
 }
 
 function getSectionConfiguration() {
-    const sections = [];
-    document.querySelectorAll('.template-section').forEach((section, index) => {
-        sections.push({
-            id: section.dataset.section,
-            order: index,
-            visible: !section.querySelector('.section-content').classList.contains('collapsed')
+    try {
+        const sections = [];
+        document.querySelectorAll('.template-section').forEach((section, index) => {
+            const sectionContent = section.querySelector('.section-content');
+            sections.push({
+                id: section.dataset.section || `section-${index}`,
+                order: index,
+                visible: sectionContent ? !sectionContent.classList.contains('collapsed') : true
+            });
         });
-    });
-    return sections;
+        console.log('Section configuration:', sections);
+        return sections;
+    } catch (error) {
+        console.error('Error getting section configuration:', error);
+        return [];
+    }
 }
 
 function getTableConfiguration() {
-    const columns = [];
-    document.querySelectorAll('#table-headers th').forEach((header, index) => {
-        columns.push({
-            id: header.dataset.column,
-            name: header.textContent,
-            order: index
+    try {
+        const columns = [];
+        document.querySelectorAll('#table-headers th').forEach((header, index) => {
+            columns.push({
+                id: header.dataset.column || `column-${index}`,
+                name: header.textContent || `Column ${index + 1}`,
+                order: index
+            });
         });
-    });
-    return columns;
+        console.log('Table configuration:', columns);
+        return columns;
+    } catch (error) {
+        console.error('Error getting table configuration:', error);
+        return [];
+    }
 }
 
 function resetTemplate() {
@@ -694,9 +921,66 @@ function resetTemplate() {
     }
 }
 
-function loadTemplate() {
-    // This would open a file picker or template selector
-    alert('Load template functionality would be implemented here');
+function loadExistingTemplate(templateId) {
+    if (confirm('Loading this template will replace your current design. Continue?')) {
+        // Fetch template data and apply it to the builder
+        fetch(`/admin/marksheets/customize/${templateId}/data`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                applyTemplateData(data.template);
+                alert('Template loaded successfully!');
+            } else {
+                alert('Error loading template: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading template: ' + error.message);
+        });
+    }
+}
+
+function applyTemplateData(template) {
+    // Apply template settings to the form
+    if (template.name) {
+        const nameInput = document.getElementById('template-name');
+        if (nameInput) nameInput.value = template.name + ' (Copy)';
+    }
+
+    if (template.settings) {
+        // Apply font family
+        const fontFamilySelect = document.getElementById('font-family');
+        if (fontFamilySelect && template.settings.font_family) {
+            fontFamilySelect.value = template.settings.font_family;
+        }
+
+        // Apply font size
+        const fontSizeInput = document.getElementById('font-size');
+        if (fontSizeInput && template.settings.font_size) {
+            fontSizeInput.value = template.settings.font_size;
+        }
+
+        // Apply colors
+        const primaryColorInput = document.getElementById('primary-color');
+        if (primaryColorInput && template.settings.header_color) {
+            primaryColorInput.value = template.settings.header_color;
+        }
+
+        const secondaryColorInput = document.getElementById('secondary-color');
+        if (secondaryColorInput && template.settings.text_color) {
+            secondaryColorInput.value = template.settings.text_color;
+        }
+    }
+
+    // Update template settings display
+    updateTemplatePreview();
 }
 
 function exportTemplate() {

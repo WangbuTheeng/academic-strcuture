@@ -39,10 +39,16 @@ class ReportController extends Controller
                           ->limit(5)
                           ->get();
 
+        // Published exams for quick marksheet generation
+        $publishedExams = Exam::with(['academicYear', 'class', 'subject'])
+                             ->whereIn('result_status', ['published', 'locked'])
+                             ->orderBy('created_at', 'desc')
+                             ->get();
+
         // Performance overview
         $performanceData = $this->getPerformanceOverview();
 
-        return view('admin.reports.index', compact('stats', 'recentExams', 'performanceData'));
+        return view('admin.reports.index', compact('stats', 'recentExams', 'publishedExams', 'performanceData'));
     }
 
     /**

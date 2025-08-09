@@ -4,6 +4,7 @@
 @section('page-title', 'Marksheet Customization')
 
 @section('content')
+ @include('admin.reports.partials.sub-navbar')
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -199,9 +200,20 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="card-title mb-0">{{ $template->name }}</h5>
-                            <span class="badge bg-{{ $template->is_active ? 'success' : 'secondary' }}">
-                                {{ $template->is_active ? 'Active' : 'Inactive' }}
-                            </span>
+                            <div class="d-flex flex-column align-items-end">
+                                <span class="badge bg-{{ $template->is_active ? 'success' : 'secondary' }} mb-1">
+                                    {{ $template->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                                @if($template->is_global)
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-globe"></i> Global
+                                    </span>
+                                @else
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-school"></i> School
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                         
                         <p class="card-text text-muted small">{{ $template->description ?? 'No description available' }}</p>
@@ -218,7 +230,7 @@
                         <div class="template-preview mb-3" style="height: 120px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; position: relative; overflow: hidden;">
                             <div class="preview-content p-2" style="font-size: 8px; line-height: 1.2;">
                                 <div style="background: {{ $template->getSetting('header_color', '#2563eb') }}; color: white; padding: 2px; text-align: center; margin-bottom: 4px;">
-                                    <strong>{{ $instituteSettings->institution_name ?? 'School Name' }}</strong>
+                                    <strong>{{ ($instituteSettings && isset($instituteSettings->institution_name)) ? $instituteSettings->institution_name : 'School Name' }}</strong>
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 4px;">
                                     <div><strong>Student:</strong> John Doe</div>
@@ -405,6 +417,23 @@
 
 .btn-group .dropdown-menu {
     min-width: 150px;
+    z-index: 1050 !important;
+}
+
+/* Fix dropdown overlap issue */
+.card {
+    position: relative;
+    z-index: 1;
+}
+
+.btn-group {
+    position: relative;
+    z-index: 10;
+}
+
+.dropdown-menu {
+    z-index: 1050 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
 </style>
 @endsection

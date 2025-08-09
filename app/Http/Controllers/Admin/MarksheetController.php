@@ -137,17 +137,26 @@ class MarksheetController extends Controller
             ]
         ]);
 
-        // Add custom templates
-        $customTemplates = MarksheetTemplate::active()->get()->map(function($template) {
-            return [
-                'id' => 'custom_' . $template->id,
-                'name' => $template->name,
-                'description' => $template->description,
-                'type' => 'custom',
-                'icon' => 'fas fa-palette',
-                'template_id' => $template->id
-            ];
-        });
+        // Get current institute settings
+        $currentInstitute = InstituteSettings::current();
+        $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+        // Add custom templates (global + institute-specific)
+        $customTemplates = MarksheetTemplate::active()
+            ->availableForInstitute($instituteId)
+            ->get()
+            ->map(function($template) {
+                return [
+                    'id' => 'custom_' . $template->id,
+                    'name' => $template->name,
+                    'description' => $template->description,
+                    'type' => 'custom',
+                    'icon' => 'fas fa-palette',
+                    'template_id' => $template->id,
+                    'is_global' => $template->is_global,
+                    'institute_name' => $template->instituteSettings ? $template->instituteSettings->institution_name : 'Global'
+                ];
+            });
 
         $availableTemplates = $availableTemplates->merge($customTemplates);
 
@@ -175,7 +184,16 @@ class MarksheetController extends Controller
                     ->findOrFail($validated['exam_id']);
 
         // Get institute settings
-        $instituteSettings = InstituteSettings::current();
+        $instituteSettings = InstituteSettings::current() ?? (object) [
+            'institution_name' => 'Academic Institution',
+            'institution_address' => 'Institution Address',
+            'institution_phone' => '+977-1-XXXXXXX',
+            'institution_email' => 'info@institution.edu.np',
+            'institution_website' => 'www.institution.edu.np',
+            'principal_name' => 'Principal Name',
+            'institution_logo' => null,
+            'institution_seal' => null,
+        ];
 
         // Get student marks for this exam
         $marks = Mark::with(['subject'])
@@ -214,7 +232,14 @@ class MarksheetController extends Controller
 
         if ($isCustomTemplate) {
             $templateId = str_replace('custom_', '', $validated['template']);
-            $customTemplate = MarksheetTemplate::findOrFail($templateId);
+
+            // Get current institute and validate template access
+            $currentInstitute = InstituteSettings::current();
+            $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+            $customTemplate = MarksheetTemplate::active()
+                ->availableForInstitute($instituteId)
+                ->findOrFail($templateId);
         }
 
         $data = [
@@ -261,6 +286,47 @@ class MarksheetController extends Controller
     }
 
     /**
+     * Generate bulk marksheets for entire class.
+     */
+    public function bulkGenerateClass(Request $request)
+    {
+        $validated = $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+            'class_id' => 'required|exists:classes,id',
+            'template' => 'required|string',
+            'grading_scale_id' => 'nullable|exists:grading_scales,id',
+        ]);
+
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
+                    ->findOrFail($validated['exam_id']);
+
+        $class = ClassModel::findOrFail($validated['class_id']);
+
+        // Get all students in the class with approved marks
+        $students = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
+                          ->whereHas('currentEnrollment', function($query) use ($validated) {
+                              $query->where('class_id', $validated['class_id']);
+                          })
+                          ->whereHas('marks', function($query) use ($validated) {
+                              $query->where('exam_id', $validated['exam_id'])
+                                    ->where('status', 'approved');
+                          })
+                          ->get()
+                          ->sortBy('currentEnrollment.roll_no');
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'No students with approved marks found for this class.');
+        }
+
+        // Set student IDs for bulk generation
+        $validated['student_ids'] = $students->pluck('id')->toArray();
+
+        // Call the regular bulk generate method
+        $request->merge($validated);
+        return $this->bulkGenerate($request);
+    }
+
+    /**
      * Generate bulk marksheets.
      */
     public function bulkGenerate(Request $request)
@@ -292,7 +358,16 @@ class MarksheetController extends Controller
         }
 
         // Get institute settings
-        $instituteSettings = InstituteSettings::current();
+        $instituteSettings = InstituteSettings::current() ?? (object) [
+            'institution_name' => 'Academic Institution',
+            'institution_address' => 'Institution Address',
+            'institution_phone' => '+977-1-XXXXXXX',
+            'institution_email' => 'info@institution.edu.np',
+            'institution_website' => 'www.institution.edu.np',
+            'principal_name' => 'Principal Name',
+            'institution_logo' => null,
+            'institution_seal' => null,
+        ];
 
         $students = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
                           ->whereIn('id', $validated['student_ids'])
@@ -386,7 +461,16 @@ class MarksheetController extends Controller
                     ->findOrFail($validated['exam_id']);
 
         // Get institute settings
-        $instituteSettings = InstituteSettings::current();
+        $instituteSettings = InstituteSettings::current() ?? (object) [
+            'institution_name' => 'Academic Institution',
+            'institution_address' => 'Institution Address',
+            'institution_phone' => '+977-1-XXXXXXX',
+            'institution_email' => 'info@institution.edu.np',
+            'institution_website' => 'www.institution.edu.np',
+            'principal_name' => 'Principal Name',
+            'institution_logo' => null,
+            'institution_seal' => null,
+        ];
 
         $marks = Mark::with(['subject'])
                     ->where('student_id', $validated['student_id'])
@@ -413,7 +497,14 @@ class MarksheetController extends Controller
 
         if ($isCustomTemplate) {
             $templateId = str_replace('custom_', '', $validated['template']);
-            $customTemplate = MarksheetTemplate::findOrFail($templateId);
+
+            // Get current institute and validate template access
+            $currentInstitute = InstituteSettings::current();
+            $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+            $customTemplate = MarksheetTemplate::active()
+                ->availableForInstitute($instituteId)
+                ->findOrFail($templateId);
         }
 
         $overallPercentage = $maxMarks > 0 ? ($totalMarks / $maxMarks) * 100 : 0;
@@ -447,6 +538,130 @@ class MarksheetController extends Controller
             $template = "admin.marksheets.customize.preview";
         } else {
             $template = "admin.marksheets.templates.{$validated['template']}";
+        }
+
+        return view($template, $data);
+    }
+
+    /**
+     * Preview bulk marksheets.
+     */
+    public function bulkPreview(Request $request)
+    {
+        $validated = $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+            'class_id' => 'nullable|exists:classes,id',
+            'student_ids' => 'required|array',
+            'student_ids.*' => 'exists:students,id',
+            'template' => 'required|string',
+            'grading_scale_id' => 'nullable|exists:grading_scales,id',
+        ]);
+
+        $exam = Exam::with(['academicYear', 'class', 'subject', 'gradingScale'])
+                    ->findOrFail($validated['exam_id']);
+
+        // Use custom grading scale if provided, otherwise use exam's default
+        $gradingScale = $validated['grading_scale_id']
+            ? GradingScale::find($validated['grading_scale_id'])
+            : $exam->gradingScale;
+
+        $students = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
+                          ->whereIn('id', $validated['student_ids'])
+                          ->get();
+
+        $marksheetData = [];
+
+        foreach ($students as $student) {
+            // Get marks for this student
+            $marks = Mark::with(['subject'])
+                        ->where('exam_id', $exam->id)
+                        ->where('student_id', $student->id)
+                        ->get();
+
+            if ($marks->isEmpty()) {
+                continue; // Skip students with no marks
+            }
+
+            // Calculate totals and grades
+            $totalMarks = $marks->sum('total_marks');
+            $maxMarks = $marks->sum('max_marks');
+            $overallPercentage = $maxMarks > 0 ? ($totalMarks / $maxMarks) * 100 : 0;
+
+            // Get grade and result using grading scale
+            $overallGrade = 'N/A';
+            $overallResult = 'Fail';
+            $overallRemarks = '';
+
+            if ($gradingScale) {
+                $gradeRange = $gradingScale->gradeRanges()
+                    ->where('min_percentage', '<=', $overallPercentage)
+                    ->where('max_percentage', '>=', $overallPercentage)
+                    ->first();
+
+                if ($gradeRange) {
+                    $overallGrade = $gradeRange->grade;
+                    $overallResult = $gradeRange->is_passing ? 'Pass' : 'Fail';
+                    $overallRemarks = $gradeRange->remarks;
+                }
+            }
+
+            $marksheetData[] = [
+                'student' => $student,
+                'marks' => $marks,
+                'totalMarks' => $totalMarks,
+                'maxMarks' => $maxMarks,
+                'overallPercentage' => $overallPercentage,
+                'overallGrade' => $overallGrade,
+                'overallResult' => $overallResult,
+                'overallRemarks' => $overallRemarks,
+            ];
+        }
+
+        // Get institute settings
+        $instituteSettings = InstituteSettings::current() ?? (object) [
+            'institution_name' => 'Academic Institution',
+            'institution_address' => 'Institution Address',
+            'institution_phone' => '+977-1-XXXXXXX',
+            'institution_email' => 'info@institution.edu.np',
+            'institution_website' => 'www.institution.edu.np',
+            'principal_name' => 'Principal Name',
+            'institution_logo' => null,
+            'institution_seal' => null,
+        ];
+
+        // Check if it's a custom template
+        $isCustomTemplate = str_starts_with($validated['template'], 'custom_');
+        $customTemplate = null;
+
+        if ($isCustomTemplate) {
+            $templateId = str_replace('custom_', '', $validated['template']);
+
+            // Get current institute and validate template access
+            $currentInstitute = InstituteSettings::current();
+            $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+            $customTemplate = MarksheetTemplate::active()
+                ->availableForInstitute($instituteId)
+                ->findOrFail($templateId);
+        }
+
+        $data = [
+            'exam' => $exam,
+            'marksheetData' => $marksheetData,
+            'instituteSettings' => $instituteSettings,
+            'generatedAt' => now(),
+            'bikramSambatDate' => $this->convertToBikramSambat(now()),
+            'template' => $customTemplate,
+            'gradingScale' => $gradingScale,
+            'isPreview' => true,
+            'isBulkPreview' => true,
+        ];
+
+        // Choose template view
+        if ($isCustomTemplate) {
+            $template = "admin.marksheets.bulk-preview-custom";
+        } else {
+            $template = "admin.marksheets.bulk-preview";
         }
 
         return view($template, $data);
@@ -495,6 +710,43 @@ class MarksheetController extends Controller
                 return 'Failed in multiple subjects. Comprehensive study plan required.';
             }
         }
+    }
+
+    /**
+     * Preview marksheets for a specific class.
+     */
+    public function classPreview(Request $request)
+    {
+        $validated = $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+            'class_id' => 'required|exists:classes,id',
+            'template' => 'required|string',
+            'grading_scale_id' => 'nullable|exists:grading_scales,id',
+        ]);
+
+        $exam = Exam::with(['class', 'academicYear', 'gradingScale'])->findOrFail($validated['exam_id']);
+        $class = ClassModel::findOrFail($validated['class_id']);
+
+        // Get all students from the class who have marks for this exam
+        $students = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
+                          ->whereHas('currentEnrollment', function($query) use ($validated) {
+                              $query->where('class_id', $validated['class_id']);
+                          })
+                          ->whereHas('marks', function($query) use ($validated) {
+                              $query->where('exam_id', $validated['exam_id'])
+                                    ->where('status', 'approved');
+                          })
+                          ->get()
+                          ->sortBy('currentEnrollment.roll_no');
+
+        if ($students->isEmpty()) {
+            return back()->with('error', 'No approved marks found for students in this class.');
+        }
+
+        // Use the same logic as bulk preview but for class students
+        $request->merge(['student_ids' => $students->pluck('id')->toArray()]);
+
+        return $this->bulkPreview($request);
     }
 
     /**

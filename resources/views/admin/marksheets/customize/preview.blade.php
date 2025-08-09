@@ -114,32 +114,47 @@
             <!-- School Header -->
             <div class="marksheet-header">
                 <div class="school-header-content">
-                    @if(($template && $template->hasSetting('show_school_logo')) && $instituteSettings->institution_logo)
-                        <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" class="school-logo">
-                    @endif
+                    {{-- School Logo (Left side) --}}
+                    <div class="logo-section">
+                        @if($instituteSettings && $instituteSettings->institution_logo && (!$template || $template->getSetting('show_school_logo', true) !== false))
+                            <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" class="school-logo">
+                        @endif
+                    </div>
 
+                    {{-- School Information (Center) --}}
                     <div class="school-info" style="text-align: center;">
-                        @if(!$template || $template->hasSetting('show_school_name'))
-                            <h1>{{ $instituteSettings->institution_name ?? 'School Name' }}</h1>
+                        {{-- Always show school name if institute settings exist, unless explicitly disabled --}}
+                        @if(!$template || $template->getSetting('show_school_name', true) !== false)
+                            <h1>{{ $instituteSettings ? $instituteSettings->institution_name : 'School Name' }}</h1>
                         @endif
 
-                        @if(!$template || $template->hasSetting('show_school_address'))
-                            <p>{{ $instituteSettings->institution_address ?? 'School Address' }}</p>
+                        {{-- Always show school address if institute settings exist, unless explicitly disabled --}}
+                        @if(!$template || $template->getSetting('show_school_address', true) !== false)
+                            <p>{{ $instituteSettings ? $instituteSettings->institution_address : 'School Address' }}</p>
                         @endif
 
-                        @if(!$template || $template->hasSetting('show_contact_info'))
-                            @if($instituteSettings->institution_phone)
+                        {{-- Always show contact info if institute settings exist, unless explicitly disabled --}}
+                        @if(!$template || $template->getSetting('show_contact_info', true) !== false)
+                            @if($instituteSettings && $instituteSettings->institution_phone)
                                 <p class="contact-info">Phone: {{ $instituteSettings->institution_phone }}</p>
                             @endif
-                            @if($instituteSettings->institution_email)
+                            @if($instituteSettings && $instituteSettings->institution_email)
                                 <p class="contact-info">Email: {{ $instituteSettings->institution_email }}</p>
                             @endif
-                            @if($instituteSettings->institution_website)
+                            @if($instituteSettings && $instituteSettings->institution_website)
                                 <p class="contact-info">Website: {{ $instituteSettings->institution_website }}</p>
                             @endif
                         @endif
 
                         <h2 style="margin: 10px 0 0 0; font-size: 18px;">ACADEMIC TRANSCRIPT</h2>
+                    </div>
+
+                    {{-- School Seal (Right side) --}}
+                    <div class="seal-section">
+                        <div class="school-seal">
+                            <i class="fas fa-certificate" style="font-size: 40px; opacity: 0.7;"></i>
+                            <p style="font-size: 10px; margin: 5px 0 0 0; opacity: 0.7;">School Seal</p>
+                        </div>
                     </div>
                 </div>
             </div>

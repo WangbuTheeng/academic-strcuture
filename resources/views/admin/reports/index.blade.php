@@ -88,6 +88,66 @@
         </div>
     </div>
 
+    <!-- Quick Marksheet Generation -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-certificate"></i> Quick Marksheet Generation
+            </h6>
+            <a href="{{ route('admin.marksheets.index') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-cog"></i> Advanced Options
+            </a>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                <i class="fas fa-info-circle text-primary"></i>
+                Generate marksheets quickly for published exams. Select an exam and class to generate bulk marksheets instantly.
+            </p>
+
+            @if($publishedExams->count() > 0)
+                <div class="row">
+                    @foreach($publishedExams->take(6) as $exam)
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-left-success h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">{{ $exam->name }}</h6>
+                                    <p class="card-text text-muted small">
+                                        <i class="fas fa-calendar"></i> {{ $exam->academicYear->name ?? 'N/A' }}<br>
+                                        <i class="fas fa-graduation-cap"></i> {{ $exam->class->name ?? 'All Classes' }}<br>
+                                        <i class="fas fa-book"></i> {{ $exam->subject->name ?? 'All Subjects' }}
+                                    </p>
+                                    <div class="mt-3">
+                                        <a href="{{ route('admin.marksheets.create', ['exam' => $exam->id]) }}"
+                                           class="btn btn-success btn-sm btn-block">
+                                            <i class="fas fa-certificate"></i> Generate Marksheets
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                @if($publishedExams->count() > 6)
+                    <div class="text-center mt-3">
+                        <a href="{{ route('admin.marksheets.index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> View All {{ $publishedExams->count() }} Published Exams
+                        </a>
+                    </div>
+                @endif
+            @else
+                <div class="text-center py-4">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Published Exams</h5>
+                    <p class="text-muted">Publish exam results to generate marksheets.</p>
+                    <a href="{{ route('admin.exams.index') }}" class="btn btn-primary">
+                        <i class="fas fa-clipboard-list"></i> Manage Exams
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
     <!-- Performance Overview -->
     @if(!empty($performanceData))
     <div class="card shadow mb-4">

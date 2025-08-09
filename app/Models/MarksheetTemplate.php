@@ -14,16 +14,19 @@ class MarksheetTemplate extends Model
         'description',
         'template_type',
         'grading_scale_id',
+        'institute_settings_id',
         'settings',
         'custom_css',
         'is_default',
-        'is_active'
+        'is_active',
+        'is_global'
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_default' => 'boolean',
         'is_active' => 'boolean',
+        'is_global' => 'boolean',
     ];
 
     /**
@@ -32,6 +35,14 @@ class MarksheetTemplate extends Model
     public function gradingScale()
     {
         return $this->belongsTo(GradingScale::class);
+    }
+
+    /**
+     * Get the institute settings associated with this template.
+     */
+    public function instituteSettings()
+    {
+        return $this->belongsTo(InstituteSettings::class);
     }
 
     /**
@@ -56,6 +67,35 @@ class MarksheetTemplate extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to get global templates.
+     */
+    public function scopeGlobal($query)
+    {
+        return $query->where('is_global', true);
+    }
+
+    /**
+     * Scope to get templates for a specific institute.
+     */
+    public function scopeForInstitute($query, $instituteId)
+    {
+        return $query->where('institute_settings_id', $instituteId);
+    }
+
+    /**
+     * Scope to get templates available for a specific institute (global + institute-specific).
+     */
+    public function scopeAvailableForInstitute($query, $instituteId = null)
+    {
+        return $query->where(function($q) use ($instituteId) {
+            $q->where('is_global', true);
+            if ($instituteId) {
+                $q->orWhere('institute_settings_id', $instituteId);
+            }
+        });
     }
 
     /**
@@ -490,16 +530,26 @@ class MarksheetTemplate extends Model
         }
 
         .school-header-content {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
             align-items: center;
-            justify-content: center;
             gap: 20px;
+            width: 100%;
         }
 
         .school-logo {
             max-height: {$logoSize};
             max-width: {$logoSize};
             object-fit: contain;
+            justify-self: start;
+        }
+
+        .school-seal {
+            max-height: {$logoSize};
+            max-width: {$logoSize};
+            object-fit: contain;
+            justify-self: end;
+            opacity: 0.7;
         }
 
         .school-info h1 {

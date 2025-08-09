@@ -22,12 +22,14 @@ class MarksheetTemplateSeeder extends Seeder
             return;
         }
 
-        // Modern Template
+        // Modern Template (Global)
         MarksheetTemplate::create([
             'name' => 'Modern Design',
             'description' => 'A clean, modern marksheet design with blue header and professional layout',
             'template_type' => 'modern',
             'grading_scale_id' => $gradingScale->id,
+            'institute_settings_id' => null,
+            'is_global' => true,
             'settings' => [
                 // School Information Display
                 'show_school_logo' => true,
@@ -64,12 +66,14 @@ class MarksheetTemplateSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Classic Template
+        // Classic Template (Global)
         MarksheetTemplate::create([
             'name' => 'Classic Design',
             'description' => 'Traditional marksheet design with formal appearance and Times font',
             'template_type' => 'classic',
             'grading_scale_id' => $gradingScale->id,
+            'institute_settings_id' => null,
+            'is_global' => true,
             'settings' => [
                 'show_school_logo' => true,
                 'show_school_address' => true,
@@ -88,12 +92,14 @@ class MarksheetTemplateSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Minimal Template
+        // Minimal Template (Global)
         MarksheetTemplate::create([
             'name' => 'Minimal Design',
             'description' => 'Clean and minimal marksheet design with reduced visual elements',
             'template_type' => 'minimal',
             'grading_scale_id' => $gradingScale->id,
+            'institute_settings_id' => null,
+            'is_global' => true,
             'settings' => [
                 'show_school_logo' => true,
                 'show_school_address' => false,
@@ -112,12 +118,14 @@ class MarksheetTemplateSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Nepali Style Template
+        // Nepali Style Template (Global)
         MarksheetTemplate::create([
             'name' => 'Nepali Traditional',
             'description' => 'Traditional Nepali marksheet design with cultural elements',
             'template_type' => 'custom',
             'grading_scale_id' => $gradingScale->id,
+            'institute_settings_id' => null,
+            'is_global' => true,
             'settings' => [
                 'show_school_logo' => true,
                 'show_school_address' => true,
@@ -156,12 +164,14 @@ class MarksheetTemplateSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // High School Template
+        // High School Template (Global)
         MarksheetTemplate::create([
             'name' => 'High School Format',
             'description' => 'Designed specifically for high school level marksheets',
             'template_type' => 'modern',
             'grading_scale_id' => $gradingScale->id,
+            'institute_settings_id' => null,
+            'is_global' => true,
             'settings' => [
                 'show_school_logo' => true,
                 'show_school_address' => true,

@@ -234,6 +234,7 @@
                         </div>
                     @endforeach
                 </div>
+            @else
                 <div class="text-center py-5">
                     <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">No published exams found</h5>

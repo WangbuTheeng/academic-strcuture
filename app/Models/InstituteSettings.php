@@ -55,6 +55,17 @@ class InstituteSettings extends Model
     }
 
     /**
+     * Safely get the logo URL even for object instances.
+     */
+    public function getLogoUrl(): ?string
+    {
+        if ($this->institution_logo) {
+            return asset('storage/' . $this->institution_logo);
+        }
+        return null;
+    }
+
+    /**
      * Get the institution seal URL.
      */
     public function getSealUrlAttribute(): ?string
@@ -63,10 +74,19 @@ class InstituteSettings extends Model
     }
 
     /**
-     * Get the current institute settings.
+     * Get the current institute settings for the current school context.
      */
     public static function current(): ?self
     {
+        // The BelongsToSchool trait should automatically scope this query
+        // but let's be explicit about it for the current school context
+        $schoolId = session('school_context');
+
+        if ($schoolId) {
+            return static::where('school_id', $schoolId)->first();
+        }
+
+        // Fallback to any settings if no school context (shouldn't happen in normal flow)
         return static::where('setup_completed', true)->first();
     }
 

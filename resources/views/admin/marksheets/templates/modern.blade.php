@@ -57,7 +57,13 @@
         .institution-address {
             font-size: 14px;
             color: #6b7280;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+        }
+
+        .institution-contact {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 3px;
         }
 
         .marksheet-title {
@@ -371,17 +377,43 @@
     <div class="marksheet">
         <!-- Header -->
         <div class="header">
-            @if(isset($instituteSettings) && $instituteSettings && $instituteSettings->logo_url)
-                <img src="{{ $instituteSettings->logo_url }}" alt="School Logo" class="institution-logo-img">
+            @php
+                $logoUrl = null;
+                $institutionName = 'Academic Management System';
+                $institutionAddress = 'Excellence in Education | Kathmandu, Nepal';
+
+                if (isset($instituteSettings) && $instituteSettings) {
+                    if (is_object($instituteSettings)) {
+                        $logoUrl = $instituteSettings->getLogoUrl();
+                        $institutionName = $instituteSettings->institution_name ?? $institutionName;
+                        $institutionAddress = $instituteSettings->institution_address ?? $institutionAddress;
+                    } else {
+                        $logoUrl = isset($instituteSettings['institution_logo']) ? asset('storage/' . $instituteSettings['institution_logo']) : null;
+                        $institutionName = $instituteSettings['institution_name'] ?? $institutionName;
+                        $institutionAddress = $instituteSettings['institution_address'] ?? $institutionAddress;
+                    }
+                }
+            @endphp
+
+            @if($logoUrl)
+                <img src="{{ $logoUrl }}" alt="School Logo" class="institution-logo-img">
             @else
                 <div class="institution-logo">
-                    {{ (isset($instituteSettings) && $instituteSettings && $instituteSettings->institution_name) ? substr($instituteSettings->institution_name, 0, 3) : 'AMS' }}
+                    {{ substr($institutionName, 0, 3) }}
                 </div>
             @endif
-            <div class="institution-name">{{ (isset($instituteSettings) && $instituteSettings) ? $instituteSettings->institution_name : 'Academic Management System' }}</div>
-            <div class="institution-address">
-                {{ (isset($instituteSettings) && $instituteSettings) ? $instituteSettings->institution_address : 'Excellence in Education | Kathmandu, Nepal' }}
-            </div>
+            <div class="institution-name">{{ $institutionName }}</div>
+            <div class="institution-address">{{ $institutionAddress }}</div>
+            @php
+                $phone = is_object($instituteSettings) ? $instituteSettings->institution_phone : ($instituteSettings['institution_phone'] ?? null);
+                $email = is_object($instituteSettings) ? $instituteSettings->institution_email : ($instituteSettings['institution_email'] ?? null);
+            @endphp
+            @if($phone)
+                <div class="institution-contact">Phone: {{ $phone }}</div>
+            @endif
+            @if($email)
+                <div class="institution-contact">Email: {{ $email }}</div>
+            @endif
             <div class="marksheet-title">Academic Marksheet</div>
         </div>
 

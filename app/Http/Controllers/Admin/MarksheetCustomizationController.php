@@ -20,16 +20,34 @@ class MarksheetCustomizationController extends Controller
     public function index()
     {
         try {
-            $templates = MarksheetTemplate::orderBy('created_at', 'desc')->get();
+            // Get current institute settings
+            $currentInstitute = InstituteSettings::current();
+            $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+            // Get templates available for this institute (global + institute-specific)
+            $templates = MarksheetTemplate::with('instituteSettings')
+                ->availableForInstitute($instituteId)
+                ->orderBy('is_global', 'desc') // Show global templates first
+                ->orderBy('created_at', 'desc')
+                ->get();
+
             $gradingScales = GradingScale::all();
-            $instituteSettings = InstituteSettings::current() ?? (object) [
-                'institution_name' => 'Academic Institution',
-                'institution_address' => 'Institution Address',
-                'institution_phone' => '+977-1-XXXXXXX',
-                'institution_email' => 'info@institution.edu.np',
-                'institution_website' => 'www.institution.edu.np',
-                'principal_name' => 'Principal Name',
-            ];
+            // Get real institute settings first
+            $instituteSettings = InstituteSettings::current();
+
+            // Only use fallback if no settings exist at all
+            if (!$instituteSettings) {
+                $instituteSettings = (object) [
+                    'institution_name' => 'Academic Institution',
+                    'institution_address' => 'Institution Address',
+                    'institution_phone' => '+977-1-XXXXXXX',
+                    'institution_email' => 'info@institution.edu.np',
+                    'institution_website' => 'www.institution.edu.np',
+                    'principal_name' => 'Principal Name',
+                    'institution_logo' => null,
+                    'institution_seal' => null,
+                ];
+            }
 
             return view('admin.marksheets.customize.index', compact('templates', 'gradingScales', 'instituteSettings'));
         } catch (\Exception $e) {
@@ -53,6 +71,12 @@ class MarksheetCustomizationController extends Controller
      */
     public function store(Request $request)
     {
+        // Check if this is a drag-drop builder request (JSON format)
+        if ($request->isJson() || $request->header('Content-Type') === 'application/json') {
+            return $this->storeDragDropTemplate($request);
+        }
+
+        // Handle regular form submission
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:500',
@@ -75,9 +99,22 @@ class MarksheetCustomizationController extends Controller
             'is_default' => 'boolean',
         ]);
 
-        // If this is set as default, unset all other defaults
+        // Get current institute settings and set it for the template
+        $currentInstitute = InstituteSettings::current();
+        if ($currentInstitute) {
+            $validated['institute_settings_id'] = $currentInstitute->id;
+        }
+
+        // Set as institute-specific template (not global)
+        $validated['is_global'] = false;
+
+        // If this is set as default, unset all other defaults for this institute
         if ($validated['is_default'] ?? false) {
-            MarksheetTemplate::where('is_default', true)->update(['is_default' => false]);
+            $query = MarksheetTemplate::where('is_default', true);
+            if ($currentInstitute) {
+                $query->where('institute_settings_id', $currentInstitute->id);
+            }
+            $query->update(['is_default' => false]);
         }
 
         $template = MarksheetTemplate::create($validated);
@@ -87,10 +124,90 @@ class MarksheetCustomizationController extends Controller
     }
 
     /**
+     * Store template from drag-drop builder
+     */
+    private function storeDragDropTemplate(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'description' => 'nullable|string|max:500',
+                'template_type' => 'required|string',
+                'grading_scale_id' => 'nullable|integer',
+                'orientation' => 'nullable|string|in:portrait,landscape',
+                'fontFamily' => 'nullable|string',
+                'fontSize' => 'nullable|string',
+                'primaryColor' => 'nullable|string',
+                'secondaryColor' => 'nullable|string',
+                'sections' => 'nullable|array',
+                'tableColumns' => 'nullable|array',
+                'settings' => 'nullable|array',
+            ]);
+
+            // Get current institute settings
+            $currentInstitute = InstituteSettings::current();
+
+            // Transform drag-drop data to match database schema
+            $templateData = [
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? 'Created with Drag & Drop Builder',
+                'template_type' => 'custom',
+                'grading_scale_id' => $validated['grading_scale_id'] ?? 1,
+                'institute_settings_id' => $currentInstitute?->id,
+                'is_global' => false,
+                'is_default' => false,
+                'settings' => [
+                    'show_school_logo' => $validated['settings']['show_school_logo'] ?? true,
+                    'show_school_name' => $validated['settings']['show_school_name'] ?? true,
+                    'show_school_address' => $validated['settings']['show_school_address'] ?? true,
+                    'show_contact_info' => $validated['settings']['show_contact_info'] ?? true,
+                    'show_principal_name' => $validated['settings']['show_principal_name'] ?? true,
+                    'show_theory_practical' => $validated['settings']['show_theory_practical'] ?? true,
+                    'show_assessment_marks' => $validated['settings']['show_assessment_marks'] ?? true,
+                    'show_remarks' => $validated['settings']['show_remarks'] ?? true,
+                    'show_grade_points' => $validated['settings']['show_grade_points'] ?? true,
+                    'header_color' => $validated['primaryColor'] ?? '#000000',
+                    'text_color' => $validated['secondaryColor'] ?? '#1f2937',
+                    'border_style' => 'solid',
+                    'font_family' => $validated['fontFamily'] ?? 'Arial',
+                    'font_size' => (int)($validated['fontSize'] ?? 12),
+                    'orientation' => $validated['orientation'] ?? 'portrait',
+                    'sections' => $validated['sections'] ?? [],
+                    'table_columns' => $validated['tableColumns'] ?? [],
+                ],
+            ];
+
+            $template = MarksheetTemplate::create($templateData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template saved successfully!',
+                'template' => $template
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error saving drag-drop template: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error saving template: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Show the specified template.
      */
     public function show(MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
+
         return view('admin.marksheets.customize.show', compact('template'));
     }
 
@@ -99,6 +216,9 @@ class MarksheetCustomizationController extends Controller
      */
     public function edit(MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
+
         $gradingScales = GradingScale::all();
         $instituteSettings = InstituteSettings::current();
 
@@ -110,6 +230,8 @@ class MarksheetCustomizationController extends Controller
      */
     public function update(Request $request, MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:500',
@@ -132,9 +254,13 @@ class MarksheetCustomizationController extends Controller
             'is_default' => 'boolean',
         ]);
 
-        // If this is set as default, unset all other defaults
+        // If this is set as default, unset all other defaults for this institute
         if ($validated['is_default'] ?? false) {
-            MarksheetTemplate::where('is_default', true)->where('id', '!=', $template->id)->update(['is_default' => false]);
+            $query = MarksheetTemplate::where('is_default', true)->where('id', '!=', $template->id);
+            if ($template->institute_settings_id) {
+                $query->where('institute_settings_id', $template->institute_settings_id);
+            }
+            $query->update(['is_default' => false]);
         }
 
         $template->update($validated);
@@ -148,8 +274,15 @@ class MarksheetCustomizationController extends Controller
      */
     public function destroy(MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
+
         if ($template->is_default) {
             return back()->with('error', 'Cannot delete the default template.');
+        }
+
+        if ($template->is_global) {
+            return back()->with('error', 'Cannot delete global templates.');
         }
 
         $template->delete();
@@ -163,19 +296,30 @@ class MarksheetCustomizationController extends Controller
      */
     public function preview(Request $request, MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
+
         try {
             // Get sample data for preview
             $sampleStudent = $this->getSampleStudent();
             $sampleExam = $this->getSampleExam();
             $sampleMarks = $this->getSampleMarks();
-            $instituteSettings = InstituteSettings::current() ?? (object) [
-                'institution_name' => 'Academic Institution',
-                'institution_address' => 'Institution Address',
-                'institution_phone' => '+977-1-XXXXXXX',
-                'institution_email' => 'info@institution.edu.np',
-                'institution_website' => 'www.institution.edu.np',
-                'principal_name' => 'Principal Name',
-            ];
+            // Get real institute settings first
+            $instituteSettings = InstituteSettings::current();
+
+            // Only use fallback if no settings exist at all
+            if (!$instituteSettings) {
+                $instituteSettings = (object) [
+                    'institution_name' => 'Academic Institution',
+                    'institution_address' => 'Institution Address',
+                    'institution_phone' => '+977-1-XXXXXXX',
+                    'institution_email' => 'info@institution.edu.np',
+                    'institution_website' => 'www.institution.edu.np',
+                    'principal_name' => 'Principal Name',
+                    'institution_logo' => null,
+                    'institution_seal' => null,
+                ];
+            }
 
             $data = [
                 'template' => $template,
@@ -205,7 +349,35 @@ class MarksheetCustomizationController extends Controller
      */
     public function dragDropBuilder()
     {
-        return view('admin.marksheets.customize.drag-drop-builder');
+        // Get current school context
+        $schoolId = session('school_context');
+
+        // Get current institute settings for this school
+        $currentInstitute = InstituteSettings::current();
+
+        // Get templates available for this institute (global + institute-specific)
+        $templates = MarksheetTemplate::with('instituteSettings')
+            ->availableForInstitute($schoolId)
+            ->orderBy('is_global', 'desc') // Show global templates first
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get institute settings for school branding
+        $instituteSettings = $currentInstitute;
+        if (!$instituteSettings) {
+            // Create default settings object with school-specific fallbacks
+            $instituteSettings = (object) [
+                'institution_name' => 'Academic Institution',
+                'institution_address' => 'Institution Address',
+                'institution_phone' => '01-1234567',
+                'institution_email' => 'info@institution.edu.np',
+                'institution_website' => 'www.institution.edu.np',
+                'institution_logo' => null,
+                'school_id' => $schoolId,
+            ];
+        }
+
+        return view('admin.marksheets.customize.drag-drop-builder', compact('templates', 'instituteSettings'));
     }
 
     /**
@@ -214,6 +386,27 @@ class MarksheetCustomizationController extends Controller
     public function advancedEditor()
     {
         return view('admin.marksheets.customize.advanced-editor');
+    }
+
+    /**
+     * Get template data for drag-drop builder.
+     */
+    public function getTemplateData(MarksheetTemplate $template)
+    {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
+
+        return response()->json([
+            'success' => true,
+            'template' => [
+                'id' => $template->id,
+                'name' => $template->name,
+                'description' => $template->description,
+                'template_type' => $template->template_type,
+                'settings' => $template->settings,
+                'is_global' => $template->is_global,
+            ]
+        ]);
     }
 
     /**
@@ -228,14 +421,22 @@ class MarksheetCustomizationController extends Controller
         $sampleStudent = $this->getSampleStudent();
         $sampleExam = $this->getSampleExam();
         $sampleMarks = $this->getSampleMarks();
-        $instituteSettings = InstituteSettings::current() ?? (object) [
-            'institution_name' => 'Academic Institution',
-            'institution_address' => 'Institution Address',
-            'institution_phone' => '+977-1-XXXXXXX',
-            'institution_email' => 'info@institution.edu.np',
-            'institution_website' => 'www.institution.edu.np',
-            'principal_name' => 'Principal Name',
-        ];
+        // Get real institute settings first
+        $instituteSettings = InstituteSettings::current();
+
+        // Only use fallback if no settings exist at all
+        if (!$instituteSettings) {
+            $instituteSettings = (object) [
+                'institution_name' => 'Academic Institution',
+                'institution_address' => 'Institution Address',
+                'institution_phone' => '+977-1-XXXXXXX',
+                'institution_email' => 'info@institution.edu.np',
+                'institution_website' => 'www.institution.edu.np',
+                'principal_name' => 'Principal Name',
+                'institution_logo' => null,
+                'institution_seal' => null,
+            ];
+        }
 
         return view('admin.marksheets.customize.live-preview', compact(
             'settings', 'customCss', 'sampleStudent', 'sampleExam', 'sampleMarks', 'instituteSettings'
@@ -247,6 +448,8 @@ class MarksheetCustomizationController extends Controller
      */
     public function templateLivePreview(Request $request, MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
         // Update template with form data temporarily (don't save to database)
         $settings = $request->input('settings', []);
         $customCss = $request->input('custom_css', '');
@@ -273,14 +476,22 @@ class MarksheetCustomizationController extends Controller
         $sampleStudent = $this->getSampleStudent();
         $sampleExam = $this->getSampleExam();
         $sampleMarks = $this->getSampleMarks();
-        $instituteSettings = InstituteSettings::current() ?? (object) [
-            'institution_name' => 'Academic Institution',
-            'institution_address' => 'Institution Address',
-            'institution_phone' => '+977-1-XXXXXXX',
-            'institution_email' => 'info@institution.edu.np',
-            'institution_website' => 'www.institution.edu.np',
-            'principal_name' => 'Principal Name',
-        ];
+        // Get real institute settings first
+        $instituteSettings = InstituteSettings::current();
+
+        // Only use fallback if no settings exist at all
+        if (!$instituteSettings) {
+            $instituteSettings = (object) [
+                'institution_name' => 'Academic Institution',
+                'institution_address' => 'Institution Address',
+                'institution_phone' => '+977-1-XXXXXXX',
+                'institution_email' => 'info@institution.edu.np',
+                'institution_website' => 'www.institution.edu.np',
+                'principal_name' => 'Principal Name',
+                'institution_logo' => null,
+                'institution_seal' => null,
+            ];
+        }
 
         return [
             'student' => $sampleStudent,
@@ -328,6 +539,8 @@ class MarksheetCustomizationController extends Controller
      */
     public function setDefault(MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
         // Unset all other defaults
         MarksheetTemplate::where('is_default', true)->update(['is_default' => false]);
 
@@ -342,9 +555,19 @@ class MarksheetCustomizationController extends Controller
      */
     public function duplicate(MarksheetTemplate $template)
     {
+        // Check if user can access this template
+        $this->authorizeTemplateAccess($template);
         $newTemplate = $template->replicate();
         $newTemplate->name = $template->name . ' (Copy)';
         $newTemplate->is_default = false;
+        $newTemplate->is_global = false; // Duplicated templates are always institute-specific
+
+        // Set to current institute
+        $currentInstitute = InstituteSettings::current();
+        if ($currentInstitute) {
+            $newTemplate->institute_settings_id = $currentInstitute->id;
+        }
+
         $newTemplate->save();
 
         return redirect()->route('admin.marksheets.customize.edit', $newTemplate)
@@ -443,5 +666,27 @@ class MarksheetCustomizationController extends Controller
     {
         $bsYear = $date->year + 57;
         return $bsYear . '-' . $date->format('m-d') . ' BS';
+    }
+
+    /**
+     * Check if the current user can access the given template.
+     */
+    private function authorizeTemplateAccess(MarksheetTemplate $template)
+    {
+        $currentInstitute = InstituteSettings::current();
+        $instituteId = $currentInstitute ? $currentInstitute->id : null;
+
+        // Allow access if template is global
+        if ($template->is_global) {
+            return;
+        }
+
+        // Allow access if template belongs to current institute
+        if ($template->institute_settings_id === $instituteId) {
+            return;
+        }
+
+        // Deny access
+        abort(403, 'You do not have permission to access this template.');
     }
 }

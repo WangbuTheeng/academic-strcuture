@@ -320,7 +320,10 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::get('/create', [\App\Http\Controllers\Admin\MarksheetController::class, 'create'])->name('create');
         Route::post('/generate', [\App\Http\Controllers\Admin\MarksheetController::class, 'generate'])->name('generate');
         Route::post('/bulk-generate', [\App\Http\Controllers\Admin\MarksheetController::class, 'bulkGenerate'])->name('bulk-generate');
+        Route::post('/bulk-generate-class', [\App\Http\Controllers\Admin\MarksheetController::class, 'bulkGenerateClass'])->name('bulk-generate-class');
         Route::post('/preview', [\App\Http\Controllers\Admin\MarksheetController::class, 'preview'])->name('preview');
+        Route::post('/bulk-preview', [\App\Http\Controllers\Admin\MarksheetController::class, 'bulkPreview'])->name('bulk-preview');
+        Route::post('/class-preview', [\App\Http\Controllers\Admin\MarksheetController::class, 'classPreview'])->name('class-preview');
 
         // Marksheet Customization routes
         Route::prefix('customize')->name('customize.')->group(function () {
@@ -333,10 +336,13 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
             Route::get('/{template}/preview', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'preview'])->name('preview');
             Route::get('/{template}/duplicate', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'duplicate'])->name('duplicate');
             Route::post('/{template}/set-default', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'setDefault'])->name('set-default');
+            Route::get('/live-preview', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'livePreview'])->name('live-preview');
+            Route::post('/{template}/live-preview', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'templateLivePreview'])->name('live-preview');
             Route::get('/table-editor', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'tableEditor'])->name('table-editor');
             Route::get('/column-reorder', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'columnReorder'])->name('column-reorder');
             Route::get('/drag-drop-builder', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'dragDropBuilder'])->name('drag-drop-builder');
             Route::get('/advanced-editor', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'advancedEditor'])->name('advanced-editor');
+            Route::get('/{template}/data', [\App\Http\Controllers\Admin\MarksheetCustomizationController::class, 'getTemplateData'])->name('template-data');
         });
     });
 

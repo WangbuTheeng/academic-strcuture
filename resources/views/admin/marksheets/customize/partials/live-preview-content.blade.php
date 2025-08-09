@@ -77,21 +77,39 @@
     
     <!-- School Header -->
     <div class="marksheet-header">
-        @if(($template->settings['show_school_logo'] ?? true))
-            <div class="school-logo">
-                <i class="fas fa-graduation-cap"></i>
+        <div class="school-header-content">
+            {{-- School Logo (Left side) --}}
+            <div class="logo-section">
+                @if(($template->settings['show_school_logo'] ?? true))
+                    @if($instituteSettings && $instituteSettings->institution_logo)
+                        <img src="{{ $instituteSettings->getLogoUrl() }}" alt="School Logo" class="school-logo">
+                    @else
+                        <i class="fas fa-graduation-cap school-logo" style="font-size: 40px;"></i>
+                    @endif
+                @endif
             </div>
-        @endif
-        
-        @if(($template->settings['show_school_name'] ?? true))
-            <h1 style="margin: 10px 0; font-size: 24px;">{{ $instituteSettings->institution_name ?? 'Academic Institution' }}</h1>
-        @endif
-        
-        @if(($template->settings['show_school_address'] ?? true))
-            <p style="margin: 5px 0;">{{ $instituteSettings->institution_address ?? 'Institution Address' }}</p>
-        @endif
-        
-        <h2 style="margin: 15px 0 0 0; font-size: 18px; color: {{ $template->settings['header_color'] ?? '#2563eb' }};">ACADEMIC TRANSCRIPT</h2>
+
+            {{-- School Information (Center) --}}
+            <div class="school-info" style="text-align: center;">
+                @if(($template->settings['show_school_name'] ?? true))
+                    <h1 style="margin: 10px 0; font-size: 24px;">{{ $instituteSettings->institution_name ?? 'Academic Institution' }}</h1>
+                @endif
+
+                @if(($template->settings['show_school_address'] ?? true))
+                    <p style="margin: 5px 0;">{{ $instituteSettings->institution_address ?? 'Institution Address' }}</p>
+                @endif
+
+                <h2 style="margin: 15px 0 0 0; font-size: 18px; color: {{ $template->settings['header_color'] ?? '#2563eb' }};">ACADEMIC TRANSCRIPT</h2>
+            </div>
+
+            {{-- School Seal (Right side) --}}
+            <div class="seal-section">
+                <div class="school-seal">
+                    <i class="fas fa-certificate" style="font-size: 40px; opacity: 0.7;"></i>
+                    <p style="font-size: 10px; margin: 5px 0 0 0; opacity: 0.7;">School Seal</p>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Student Information -->
