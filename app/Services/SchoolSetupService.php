@@ -6,6 +6,8 @@ use App\Models\School;
 use App\Models\User;
 use App\Models\Level;
 use App\Models\Faculty;
+use App\Models\Department;
+use App\Models\ClassModel;
 use App\Models\InstituteSettings;
 use App\Models\GradingScale;
 use Illuminate\Support\Facades\DB;
@@ -275,11 +277,13 @@ class SchoolSetupService
             'bachelor' => ['name' => 'Bachelor', 'order' => 3],
         ];
 
+        $createdLevels = [];
+
         foreach ($selectedLevels as $levelKey) {
             if (isset($levelMapping[$levelKey])) {
                 $levelData = $levelMapping[$levelKey];
 
-                Level::firstOrCreate(
+                $level = Level::firstOrCreate(
                     [
                         'name' => $levelData['name'],
                         'school_id' => $school->id
@@ -289,8 +293,110 @@ class SchoolSetupService
                         'school_id' => $school->id
                     ]
                 );
+
+                $createdLevels[$levelKey] = $level;
             }
         }
+
+        // Create default classes for school and college levels
+        $this->createDefaultClasses($school, $createdLevels, $selectedLevels);
+    }
+
+    /**
+     * Create default classes for school and college levels
+     */
+    private function createDefaultClasses(School $school, array $createdLevels, array $selectedLevels): void
+    {
+        // Only create default classes if school or college levels are selected
+        if (!in_array('school', $selectedLevels) && !in_array('college', $selectedLevels)) {
+            return;
+        }
+
+        // First, ensure we have a default faculty and department
+        $defaultFaculty = $this->getOrCreateDefaultFaculty($school);
+        $defaultDepartment = $this->getOrCreateDefaultDepartment($school, $defaultFaculty);
+
+        // Define default classes for each level
+        $defaultClasses = [
+            'school' => [
+                ['name' => 'Nursery', 'code' => 'NUR'],
+                ['name' => 'LKG', 'code' => 'LKG'],
+                ['name' => 'UKG', 'code' => 'UKG'],
+                ['name' => 'Class 1', 'code' => '1'],
+                ['name' => 'Class 2', 'code' => '2'],
+                ['name' => 'Class 3', 'code' => '3'],
+                ['name' => 'Class 4', 'code' => '4'],
+                ['name' => 'Class 5', 'code' => '5'],
+                ['name' => 'Class 6', 'code' => '6'],
+                ['name' => 'Class 7', 'code' => '7'],
+                ['name' => 'Class 8', 'code' => '8'],
+                ['name' => 'Class 9', 'code' => '9'],
+                ['name' => 'Class 10', 'code' => '10'],
+            ],
+            'college' => [
+                ['name' => 'Class 11', 'code' => '11'],
+                ['name' => 'Class 12', 'code' => '12'],
+            ]
+        ];
+
+        // Create classes for each selected level
+        foreach ($selectedLevels as $levelKey) {
+            if (isset($createdLevels[$levelKey]) && isset($defaultClasses[$levelKey])) {
+                $level = $createdLevels[$levelKey];
+
+                foreach ($defaultClasses[$levelKey] as $classData) {
+                    \App\Models\ClassModel::firstOrCreate(
+                        [
+                            'name' => $classData['name'],
+                            'level_id' => $level->id,
+                            'school_id' => $school->id
+                        ],
+                        [
+                            'code' => $classData['code'],
+                            'department_id' => $defaultDepartment->id,
+                            'is_active' => true,
+                            'school_id' => $school->id
+                        ]
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Get or create default faculty for the school
+     */
+    private function getOrCreateDefaultFaculty(School $school)
+    {
+        return \App\Models\Faculty::firstOrCreate(
+            [
+                'name' => 'General Faculty',
+                'school_id' => $school->id
+            ],
+            [
+                'code' => 'GEN',
+                'school_id' => $school->id
+            ]
+        );
+    }
+
+    /**
+     * Get or create default department for the school
+     */
+    private function getOrCreateDefaultDepartment(School $school, $faculty)
+    {
+        return \App\Models\Department::firstOrCreate(
+            [
+                'name' => 'General Department',
+                'faculty_id' => $faculty->id,
+                'school_id' => $school->id
+            ],
+            [
+                'code' => 'GEN',
+                'faculty_id' => $faculty->id,
+                'school_id' => $school->id
+            ]
+        );
     }
 
     /**

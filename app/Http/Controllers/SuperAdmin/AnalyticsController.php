@@ -168,8 +168,16 @@ class AnalyticsController extends Controller
 
         foreach ($schoolStats as $stat) {
             $usage = $stat->feature_usage ?? [];
-            foreach ($usage as $feature => $count) {
-                $aggregated[$feature] = ($aggregated[$feature] ?? 0) + $count;
+
+            // Ensure usage is an array
+            if (is_string($usage)) {
+                $usage = json_decode($usage, true) ?? [];
+            }
+
+            if (is_array($usage)) {
+                foreach ($usage as $feature => $count) {
+                    $aggregated[$feature] = ($aggregated[$feature] ?? 0) + $count;
+                }
             }
         }
 

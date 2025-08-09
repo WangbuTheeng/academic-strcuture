@@ -9,14 +9,18 @@ use App\Models\ClassModel;
 use App\Models\Program;
 use App\Models\Subject;
 use App\Models\GradingScale;
+use App\Services\ExamService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ExamController extends Controller
 {
-    public function __construct()
+    protected $examService;
+
+    public function __construct(ExamService $examService)
     {
         $this->middleware(['auth', 'permission:manage-exams']);
+        $this->examService = $examService;
     }
 
     /**
@@ -68,13 +72,14 @@ class ExamController extends Controller
     public function create()
     {
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
+        $levels = \App\Models\Level::orderBy('order')->get();
         $classes = ClassModel::with('level')->get();
         $programs = Program::all();
         $subjects = Subject::with('department')->get();
         $gradingScales = GradingScale::all();
 
         return view('admin.exams.create', compact(
-            'academicYears', 'classes', 'programs', 'subjects', 'gradingScales'
+            'academicYears', 'levels', 'classes', 'programs', 'subjects', 'gradingScales'
         ));
     }
 
@@ -87,9 +92,11 @@ class ExamController extends Controller
             'name' => 'required|string|max:200',
             'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final,custom',
             'custom_exam_type' => 'required_if:exam_type,custom|nullable|string|max:50',
+            'exam_scope' => 'required|in:class,level,school',
             'academic_year_id' => 'required|exists:academic_years,id',
 
-            'class_id' => 'nullable|exists:classes,id',
+            'level_id' => 'required_if:exam_scope,level|nullable|exists:levels,id',
+            'class_id' => 'required_if:exam_scope,class|nullable|exists:classes,id',
             'program_id' => 'nullable|exists:programs,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'max_marks' => 'required|numeric|min:1|max:1000',
@@ -118,21 +125,20 @@ class ExamController extends Controller
             ])->withInput();
         }
 
-        // Handle custom exam type
-        if ($validated['exam_type'] === 'custom') {
-            $validated['exam_type'] = $validated['custom_exam_type'];
+        try {
+            $createdExams = $this->examService->createExam($validated);
+
+            $examCount = count($createdExams);
+            $message = $examCount === 1
+                ? 'Exam created successfully.'
+                : "Exam created successfully for {$examCount} classes.";
+
+            return redirect()->route('admin.exams.index')
+                            ->with('success', $message);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to create exam: ' . $e->getMessage()])
+                        ->withInput();
         }
-
-        // Remove custom_exam_type from validated data as it's not a database field
-        unset($validated['custom_exam_type']);
-
-        $validated['created_by'] = auth()->id();
-        $validated['status'] = 'draft';
-
-        $exam = Exam::create($validated);
-
-        return redirect()->route('admin.exams.index')
-                        ->with('success', 'Exam created successfully.');
     }
 
     /**
@@ -170,13 +176,14 @@ class ExamController extends Controller
         }
 
         $academicYears = AcademicYear::orderBy('name', 'desc')->get();
+        $levels = \App\Models\Level::orderBy('order')->get();
         $classes = ClassModel::with('level')->get();
         $programs = Program::all();
         $subjects = Subject::with('department')->get();
         $gradingScales = GradingScale::all();
 
         return view('admin.exams.edit', compact(
-            'exam', 'academicYears', 'classes', 'programs', 'subjects', 'gradingScales'
+            'exam', 'academicYears', 'levels', 'classes', 'programs', 'subjects', 'gradingScales'
         ));
     }
 
@@ -194,9 +201,11 @@ class ExamController extends Controller
             'name' => 'required|string|max:200',
             'exam_type' => 'required|in:assessment,terminal,quiz,project,practical,final,custom',
             'custom_exam_type' => 'required_if:exam_type,custom|nullable|string|max:50',
+            'exam_scope' => 'required|in:class,level,school',
             'academic_year_id' => 'required|exists:academic_years,id',
 
-            'class_id' => 'nullable|exists:classes,id',
+            'level_id' => 'required_if:exam_scope,level|nullable|exists:levels,id',
+            'class_id' => 'required_if:exam_scope,class|nullable|exists:classes,id',
             'program_id' => 'nullable|exists:programs,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'max_marks' => 'required|numeric|min:1|max:1000',

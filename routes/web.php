@@ -46,6 +46,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'super-a
     Route::post('schools/generate-code', [SchoolController::class, 'generateCode'])->name('schools.generate-code');
     Route::patch('schools/{school}/status', [SchoolController::class, 'updateStatus'])->name('schools.update-status');
     Route::patch('schools/{school}/reset-password', [SchoolController::class, 'resetPassword'])->name('schools.reset-password');
+    Route::delete('schools/{school}/force-delete', [SchoolController::class, 'forceDelete'])->name('schools.force-delete');
 
     // Analytics
     Route::prefix('analytics')->name('analytics.')->group(function () {
@@ -437,6 +438,11 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::post('/backup/create', [\App\Http\Controllers\Admin\AcademicSettingsController::class, 'createBackup'])->name('backup.create');
         Route::get('/backup/{filename}/download', [\App\Http\Controllers\Admin\AcademicSettingsController::class, 'downloadBackup'])->name('backup.download');
         Route::delete('/backup/{filename}', [\App\Http\Controllers\Admin\AcademicSettingsController::class, 'deleteBackup'])->name('backup.delete');
+
+        // Redirect routes for backward compatibility
+        Route::get('/levels', function() { return redirect()->route('admin.levels.index'); })->name('levels');
+        Route::get('/programs', function() { return redirect()->route('admin.programs.index'); })->name('programs');
+        Route::get('/subjects', function() { return redirect()->route('admin.subjects.index'); })->name('subjects');
     });
 
     // Backup Management routes
@@ -492,12 +498,7 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         abort(404);
     })->where('path', '.*');
 
-    // Academic Settings Routes
-    Route::prefix('academic-settings')->name('academic-settings.')->group(function () {
-        Route::get('/levels', function() { return view('admin.academic-settings.levels'); })->name('levels');
-        Route::get('/programs', function() { return view('admin.academic-settings.programs'); })->name('programs');
-        Route::get('/subjects', function() { return view('admin.academic-settings.subjects'); })->name('subjects');
-    });
+
 });
 
 // Principal routes - with school context

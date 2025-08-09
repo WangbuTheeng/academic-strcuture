@@ -652,19 +652,19 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('admin.academic-settings.levels') ? 'active' : '' }}" href="{{ route('admin.academic-settings.levels') }}">
+                                <a class="nav-link {{ request()->routeIs('admin.levels.*') ? 'active' : '' }}" href="{{ route('admin.levels.index') }}">
                                     <i class="fas fa-layer-group"></i>
                                     <span>Academic Levels</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('admin.academic-settings.programs') ? 'active' : '' }}" href="{{ route('admin.academic-settings.programs') }}">
+                                <a class="nav-link {{ request()->routeIs('admin.programs.*') ? 'active' : '' }}" href="{{ route('admin.programs.index') }}">
                                     <i class="fas fa-graduation-cap"></i>
                                     <span>Programs</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('admin.academic-settings.subjects') ? 'active' : '' }}" href="{{ route('admin.academic-settings.subjects') }}">
+                                <a class="nav-link {{ request()->routeIs('admin.subjects.*') ? 'active' : '' }}" href="{{ route('admin.subjects.index') }}">
                                     <i class="fas fa-book"></i>
                                     <span>Subjects</span>
                                 </a>

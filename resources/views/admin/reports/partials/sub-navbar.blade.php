@@ -64,7 +64,7 @@
 
                         <!-- Academic Settings Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {{ request()->routeIs('admin.academic-settings.*') || request()->routeIs('admin.grading-scales.*') || request()->routeIs('admin.institute-settings.*') ? 'active fw-bold' : '' }}"
+                            <a class="nav-link dropdown-toggle {{ request()->routeIs('admin.academic.*') || request()->routeIs('admin.levels.*') || request()->routeIs('admin.faculties.*') || request()->routeIs('admin.departments.*') || request()->routeIs('admin.programs.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.classes.*') || request()->routeIs('admin.academic-years.*') || request()->routeIs('admin.grading-scales.*') || request()->routeIs('admin.institute-settings.*') ? 'active fw-bold' : '' }}"
                                href="#" id="academicSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-university me-1"></i>
                                 <span class="d-none d-xl-inline">Academic Settings</span>
@@ -76,22 +76,43 @@
                                     <i class="fas fa-school me-2"></i>School Information
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ route('admin.institute-settings.academic') }}">
-                                    <i class="fas fa-calendar-alt me-2"></i>Academic Year
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-
-                                <li><h6 class="dropdown-header">Grading System</h6></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.grading-scales.index') }}">
-                                    <i class="fas fa-chart-line me-2"></i>Grading Scales
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.grading-scales.create') }}">
-                                    <i class="fas fa-plus me-2"></i>Create New Scale
+                                    <i class="fas fa-cog me-2"></i>Academic Configuration
                                 </a></li>
                                 <li><hr class="dropdown-divider"></li>
 
                                 <li><h6 class="dropdown-header">Academic Structure</h6></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.academic-settings.levels') }}">
+                                <li><a class="dropdown-item" href="{{ route('admin.academic.index') }}">
+                                    <i class="fas fa-sitemap me-2"></i>Academic Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.levels.index') }}">
                                     <i class="fas fa-layer-group me-2"></i>Academic Levels
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.faculties.index') }}">
+                                    <i class="fas fa-building me-2"></i>Faculties
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}">
+                                    <i class="fas fa-users-cog me-2"></i>Departments
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li><h6 class="dropdown-header">Academic Programs</h6></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.programs.index') }}">
+                                    <i class="fas fa-graduation-cap me-2"></i>Programs
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.classes.index') }}">
+                                    <i class="fas fa-chalkboard me-2"></i>Classes
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.subjects.index') }}">
+                                    <i class="fas fa-book me-2"></i>Subjects
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li><h6 class="dropdown-header">Academic Years & Grading</h6></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.academic-years.index') }}">
+                                    <i class="fas fa-calendar-alt me-2"></i>Academic Years
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.grading-scales.index') }}">
+                                    <i class="fas fa-chart-line me-2"></i>Grading Scales
                                 </a></li>
                             </ul>
                         </li>

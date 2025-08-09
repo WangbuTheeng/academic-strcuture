@@ -14,7 +14,9 @@ class Exam extends Model
         'school_id',
         'name',
         'exam_type',
+        'exam_scope',
         'academic_year_id',
+        'level_id',
 
         'class_id',
         'program_id',
@@ -74,6 +76,14 @@ class Exam extends Model
     public function class()
     {
         return $this->belongsTo(ClassModel::class, 'class_id');
+    }
+
+    /**
+     * Get the level that owns the exam.
+     */
+    public function level()
+    {
+        return $this->belongsTo(Level::class);
     }
 
     /**
@@ -163,25 +173,49 @@ class Exam extends Model
 
     /**
      * Get the students for this exam.
-     * Returns students enrolled in the exam's class and academic year.
+     * Returns students enrolled in the exam's class/level and academic year.
      */
     public function students()
     {
         $query = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
                        ->where('status', 'active');
 
-        if ($this->class_id) {
+        if ($this->exam_scope === 'class' && $this->class_id) {
+            // Class-specific exam
             $query->whereHas('currentEnrollment', function($q) {
                 $q->where('class_id', $this->class_id)
                   ->where('academic_year_id', $this->academic_year_id);
             });
+        } elseif ($this->exam_scope === 'level' && $this->level_id) {
+            // Level-wide exam
+            $query->whereHas('currentEnrollment.class', function($q) {
+                $q->where('level_id', $this->level_id);
+            })->whereHas('currentEnrollment', function($q) {
+                $q->where('academic_year_id', $this->academic_year_id);
+            });
         } else {
+            // School-wide exam or fallback
             $query->whereHas('currentEnrollment', function($q) {
                 $q->where('academic_year_id', $this->academic_year_id);
             });
         }
 
         return $query;
+    }
+
+    /**
+     * Get all classes affected by this exam.
+     */
+    public function getAffectedClasses()
+    {
+        if ($this->exam_scope === 'class' && $this->class_id) {
+            return ClassModel::where('id', $this->class_id)->get();
+        } elseif ($this->exam_scope === 'level' && $this->level_id) {
+            return ClassModel::where('level_id', $this->level_id)->get();
+        } else {
+            // School-wide
+            return ClassModel::all();
+        }
     }
 
     /**

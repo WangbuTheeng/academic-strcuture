@@ -33,7 +33,7 @@ class SchoolCreationService
             $school = School::create([
                 'name' => $data['name'],
                 'code' => $data['code'] ?? $this->generateSchoolCode($data['name']),
-                'password' => Hash::make($data['password']),
+                'password' => $data['password'], // Let the model mutator handle hashing
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
                 'address' => $data['address'] ?? null,

@@ -181,7 +181,15 @@
                                 </td>
                                 <td>
                                     <div class="fw-bold">{{ $exam->subject->name ?? 'All Subjects' }}</div>
-                                    <small class="text-muted">{{ $exam->class->name ?? 'All Classes' }}</small>
+                                    <small class="text-muted">
+                                        @if($exam->exam_scope === 'level')
+                                            <i class="fas fa-layer-group me-1"></i>{{ $exam->level->name ?? 'Level' }} - {{ $exam->class->name ?? 'All Classes' }}
+                                        @elseif($exam->exam_scope === 'school')
+                                            <i class="fas fa-school me-1"></i>School-wide - {{ $exam->class->name ?? 'All Classes' }}
+                                        @else
+                                            <i class="fas fa-chalkboard-teacher me-1"></i>{{ $exam->class->name ?? 'All Classes' }}
+                                        @endif
+                                    </small>
                                 </td>
                                 <td>
                                     <div>{{ $exam->start_date?->format('M d, Y') ?? 'Not Set' }}</div>

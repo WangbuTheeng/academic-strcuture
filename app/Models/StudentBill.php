@@ -277,18 +277,27 @@ class StudentBill extends Model
     }
 
     /**
-     * Generate unique bill number.
+     * Generate unique bill number with proper locking to prevent duplicates.
      */
     public static function generateBillNumber()
     {
-        $year = date('Y');
-        $lastBill = self::whereYear('created_at', $year)
-                       ->orderBy('id', 'desc')
-                       ->first();
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            $year = date('Y');
 
-        $number = $lastBill ? (int)substr($lastBill->bill_number, -3) + 1 : 1;
+            // Use FOR UPDATE to lock the row and prevent race conditions
+            $lastBill = self::whereYear('created_at', $year)
+                           ->orderBy('bill_number', 'desc')
+                           ->lockForUpdate()
+                           ->first();
 
-        return 'BILL-' . $year . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
+            if ($lastBill && preg_match('/BILL-\d{4}-(\d{6})/', $lastBill->bill_number, $matches)) {
+                $number = (int)$matches[1] + 1;
+            } else {
+                $number = 1;
+            }
+
+            return 'BILL-' . $year . '-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+        });
     }
 
     /**

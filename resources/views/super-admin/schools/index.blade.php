@@ -288,6 +288,19 @@
                                                             @if($school->status !== 'suspended')
                                                                 <button onclick="confirmAction('Are you sure you want to suspend this school?', () => updateSchoolStatus('{{ $school->id }}', 'suspended'))" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Suspend School</button>
                                                             @endif
+                                                            <div class="border-t border-gray-100"></div>
+                                                            <button onclick="deleteSchool('{{ $school->id }}', '{{ $school->name }}', {{ $school->users_count }}, {{ $school->students_count }})" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                </svg>
+                                                                Delete School
+                                                            </button>
+                                                            <button onclick="forceDeleteSchool('{{ $school->id }}', '{{ $school->name }}')" class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 font-medium">
+                                                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                                                </svg>
+                                                                Force Delete
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -537,6 +550,68 @@
 
         function closePasswordResetModal() {
             document.getElementById('passwordResetModal').style.display = 'none';
+        }
+
+        // Delete school functions
+        function deleteSchool(schoolId, schoolName, userCount, studentCount) {
+            let message = `Are you sure you want to delete "${schoolName}"?`;
+
+            if (userCount > 0 || studentCount > 0) {
+                message += `\n\nThis school has ${userCount} users and ${studentCount} students.`;
+                message += `\nThe school will be deactivated instead of deleted to preserve data.`;
+            } else {
+                message += `\n\nThis action cannot be undone!`;
+            }
+
+            if (confirm(message)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/super-admin/schools/${schoolId}`;
+
+                const methodField = document.createElement('input');
+                methodField.type = 'hidden';
+                methodField.name = '_method';
+                methodField.value = 'DELETE';
+                form.appendChild(methodField);
+
+                const tokenField = document.createElement('input');
+                tokenField.type = 'hidden';
+                tokenField.name = '_token';
+                tokenField.value = '{{ csrf_token() }}';
+                form.appendChild(tokenField);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function forceDeleteSchool(schoolId, schoolName) {
+            const message = `⚠️ DANGER: Force delete "${schoolName}"?\n\nThis will PERMANENTLY DELETE:\n- The school\n- All users\n- All students\n- All academic data\n\nThis action CANNOT be undone!\n\nType "DELETE" to confirm:`;
+
+            const confirmation = prompt(message);
+
+            if (confirmation === 'DELETE') {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/super-admin/schools/${schoolId}/force-delete`;
+
+                const methodField = document.createElement('input');
+                methodField.type = 'hidden';
+                methodField.name = '_method';
+                methodField.value = 'DELETE';
+                form.appendChild(methodField);
+
+                const tokenField = document.createElement('input');
+                tokenField.type = 'hidden';
+                tokenField.name = '_token';
+                tokenField.value = '{{ csrf_token() }}';
+                form.appendChild(tokenField);
+
+                document.body.appendChild(form);
+                form.submit();
+            } else if (confirmation !== null) {
+                alert('Force delete cancelled. You must type "DELETE" exactly to confirm.');
+            }
         }
     </script>
 

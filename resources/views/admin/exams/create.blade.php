@@ -111,16 +111,92 @@
                                 <i class="fas fa-bullseye me-2"></i>Exam Scope
                             </h6>
 
-                            <div class="row">
+                            <!-- Exam Scope Selection -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Exam Scope</label>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="exam_scope" id="scope_class" value="class" {{ old('exam_scope', 'class') == 'class' ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="scope_class">
+                                                    <div class="card h-100 border-2">
+                                                        <div class="card-body text-center">
+                                                            <i class="fas fa-chalkboard-teacher fa-2x text-primary mb-2"></i>
+                                                            <h6 class="card-title">Single Class</h6>
+                                                            <p class="card-text small text-muted">Exam for one specific class</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="exam_scope" id="scope_level" value="level" {{ old('exam_scope') == 'level' ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="scope_level">
+                                                    <div class="card h-100 border-2">
+                                                        <div class="card-body text-center">
+                                                            <i class="fas fa-layer-group fa-2x text-success mb-2"></i>
+                                                            <h6 class="card-title">Level-wide</h6>
+                                                            <p class="card-text small text-muted">Exam for all classes in a level (School/College)</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-check-card">
+                                                <input class="form-check-input" type="radio" name="exam_scope" id="scope_school" value="school" {{ old('exam_scope') == 'school' ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="scope_school">
+                                                    <div class="card h-100 border-2">
+                                                        <div class="card-body text-center">
+                                                            <i class="fas fa-school fa-2x text-warning mb-2"></i>
+                                                            <h6 class="card-title">School-wide</h6>
+                                                            <p class="card-text small text-muted">Exam for entire school</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('exam_scope')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
 
-                                <!-- Class -->
-                                <div class="col-md-6 mb-3">
+                            <div class="row">
+                                <!-- Level Selection (shown when level scope is selected) -->
+                                <div class="col-md-6 mb-3" id="level_selection" style="display: none;">
+                                    <label for="level_id" class="form-label fw-semibold">
+                                        <i class="fas fa-layer-group me-1"></i>Academic Level
+                                    </label>
+                                    <select name="level_id" id="level_id"
+                                            class="form-select @error('level_id') is-invalid @enderror">
+                                        <option value="">Select Level</option>
+                                        @foreach($levels as $level)
+                                            <option value="{{ $level->id }}" {{ old('level_id') == $level->id ? 'selected' : '' }}>
+                                                {{ $level->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('level_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        This exam will apply to all classes within the selected level
+                                    </div>
+                                </div>
+
+                                <!-- Class Selection (shown when class scope is selected) -->
+                                <div class="col-md-6 mb-3" id="class_selection">
                                     <label for="class_id" class="form-label fw-semibold">
-                                        Class
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>Class
                                     </label>
                                     <select name="class_id" id="class_id"
                                             class="form-select @error('class_id') is-invalid @enderror">
-                                        <option value="">All Classes</option>
+                                        <option value="">Select Class</option>
                                         @foreach($classes as $class)
                                             <option value="{{ $class->id }}" {{ old('class_id') == $class->id ? 'selected' : '' }}>
                                                 {{ $class->name }} ({{ $class->level->name }})
@@ -421,6 +497,36 @@
 
 @endsection
 
+@push('styles')
+<style>
+.form-check-card .form-check-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.form-check-card .form-check-input:checked + .form-check-label .card {
+    border-color: #4e73df !important;
+    background-color: #f8f9fc;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.form-check-card .card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-check-card .card:hover {
+    border-color: #4e73df;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.form-check-card .form-check-label {
+    width: 100%;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
     function updateMarkDistribution() {
@@ -494,10 +600,42 @@
         }
     }
 
+    // Handle exam scope selection
+    function handleScopeChange() {
+        const scopeValue = document.querySelector('input[name="exam_scope"]:checked').value;
+        const levelSelection = document.getElementById('level_selection');
+        const classSelection = document.getElementById('class_selection');
+
+        // Hide all selections first
+        levelSelection.style.display = 'none';
+        classSelection.style.display = 'none';
+
+        // Show relevant selection based on scope
+        if (scopeValue === 'level') {
+            levelSelection.style.display = 'block';
+            // Clear class selection
+            document.getElementById('class_id').value = '';
+        } else if (scopeValue === 'class') {
+            classSelection.style.display = 'block';
+            // Clear level selection
+            document.getElementById('level_id').value = '';
+        } else if (scopeValue === 'school') {
+            // Clear both selections for school-wide
+            document.getElementById('class_id').value = '';
+            document.getElementById('level_id').value = '';
+        }
+    }
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateMarkDistribution();
         toggleCustomExamType(); // Initialize custom exam type visibility
+        handleScopeChange(); // Initialize scope selection
+
+        // Add event listeners for scope radio buttons
+        document.querySelectorAll('input[name="exam_scope"]').forEach(radio => {
+            radio.addEventListener('change', handleScopeChange);
+        });
     });
 </script>
 @endpush

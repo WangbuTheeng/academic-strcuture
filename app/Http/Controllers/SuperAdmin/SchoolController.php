@@ -175,13 +175,51 @@ class SchoolController extends Controller
     public function destroy(School $school)
     {
         try {
-            // Soft delete by deactivating
-            $this->schoolSetupService->deactivateSchool($school);
+            // Check if school has any data that would prevent deletion
+            $hasUsers = $school->users()->count() > 0;
+            $hasStudents = $school->students()->count() > 0;
 
-            return redirect()->route('super-admin.schools.index')
-                           ->with('success', 'School deactivated successfully!');
+            if ($hasUsers || $hasStudents) {
+                // Soft delete by deactivating if school has data
+                $this->schoolSetupService->deactivateSchool($school);
+
+                $this->auditLogger->logActivity('school_deactivated', [
+                    'resource_type' => 'school',
+                    'resource_id' => $school->id,
+                    'new_values' => [
+                        'name' => $school->name,
+                        'code' => $school->code,
+                        'reason' => 'Has users or students - deactivated instead of deleted'
+                    ],
+                    'category' => 'super_admin',
+                    'severity' => 'warning'
+                ]);
+
+                return redirect()->route('super-admin.schools.index')
+                               ->with('warning', 'School has users/students and was deactivated instead of deleted.');
+            } else {
+                // Hard delete if school has no data
+                $schoolName = $school->name;
+                $schoolCode = $school->code;
+
+                $this->auditLogger->logActivity('school_deleted', [
+                    'resource_type' => 'school',
+                    'resource_id' => $school->id,
+                    'new_values' => [
+                        'name' => $schoolName,
+                        'code' => $schoolCode
+                    ],
+                    'category' => 'super_admin',
+                    'severity' => 'critical'
+                ]);
+
+                $school->delete();
+
+                return redirect()->route('super-admin.schools.index')
+                               ->with('success', 'School deleted successfully!');
+            }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Failed to deactivate school: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to delete school: ' . $e->getMessage()]);
         }
     }
 
@@ -284,5 +322,42 @@ class SchoolController extends Controller
             ->with('success', 'School password has been reset.')
             ->with('new_password', $newPassword)
             ->with('school_code', $school->code);
+    }
+
+    /**
+     * Force delete a school (even with data)
+     */
+    public function forceDelete(School $school)
+    {
+        try {
+            $schoolName = $school->name;
+            $schoolCode = $school->code;
+            $userCount = $school->users()->count();
+            $studentCount = $school->students()->count();
+
+            $this->auditLogger->logActivity('school_force_deleted', [
+                'resource_type' => 'school',
+                'resource_id' => $school->id,
+                'new_values' => [
+                    'name' => $schoolName,
+                    'code' => $schoolCode,
+                    'users_deleted' => $userCount,
+                    'students_deleted' => $studentCount
+                ],
+                'category' => 'super_admin',
+                'severity' => 'critical'
+            ]);
+
+            // Delete all related data
+            $school->users()->delete();
+            $school->students()->delete();
+            $school->levels()->delete();
+            $school->delete();
+
+            return redirect()->route('super-admin.schools.index')
+                           ->with('success', "School '{$schoolName}' and all its data deleted permanently!");
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to force delete school: ' . $e->getMessage()]);
+        }
     }
 }
