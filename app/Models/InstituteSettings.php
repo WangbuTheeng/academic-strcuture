@@ -27,7 +27,10 @@ class InstituteSettings extends Model
         'default_grading_scale_id',
         'setup_completed',
         'setup_completed_at',
-        'settings_data'
+        'settings_data',
+        'school_motto',
+        'established_year',
+        'affiliation'
     ];
 
     protected $casts = [

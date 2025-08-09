@@ -95,7 +95,9 @@ class DataIsolationMiddleware
             $schoolScopedTables = [
                 'students', 'teachers', 'classes', 'subjects', 'exams',
                 'marks', 'fees', 'attendances', 'assignments', 'levels',
-                'faculties', 'grading_scales', 'institute_settings'
+                'faculties', 'grading_scales', 'institute_settings',
+                'fee_structures', 'student_bills', 'bill_items', 'payments',
+                'payment_receipts', 'programs', 'student_enrollments'
             ];
 
             // Check if query involves school-scoped tables

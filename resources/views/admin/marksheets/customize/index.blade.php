@@ -4,7 +4,6 @@
 @section('page-title', 'Marksheet Customization')
 
 @section('content')
- @include('admin.reports.partials.sub-navbar')
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">

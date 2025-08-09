@@ -278,25 +278,43 @@ class StudentBill extends Model
 
     /**
      * Generate unique bill number with proper locking to prevent duplicates.
+     * Now school-specific to avoid conflicts between schools.
      */
-    public static function generateBillNumber()
+    public static function generateBillNumber($schoolId = null)
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($schoolId) {
             $year = date('Y');
 
-            // Use FOR UPDATE to lock the row and prevent race conditions
-            $lastBill = self::whereYear('created_at', $year)
-                           ->orderBy('bill_number', 'desc')
-                           ->lockForUpdate()
-                           ->first();
-
-            if ($lastBill && preg_match('/BILL-\d{4}-(\d{6})/', $lastBill->bill_number, $matches)) {
-                $number = (int)$matches[1] + 1;
-            } else {
-                $number = 1;
+            // Use current user's school if not provided
+            if (!$schoolId && auth()->check()) {
+                $schoolId = auth()->user()->school_id;
             }
 
-            return 'BILL-' . $year . '-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+            // Get all bills for current year and school, extract numbers
+            $query = self::where('bill_number', 'like', "BILL-{$year}-%");
+
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
+
+            $existingBills = $query->pluck('bill_number')->toArray();
+
+            $maxNumber = 0;
+
+            foreach ($existingBills as $billNumber) {
+                // Handle both 3-digit and 6-digit formats
+                if (preg_match('/BILL-\d{4}-(\d+)/', $billNumber, $matches)) {
+                    $number = (int)$matches[1];
+                    if ($number > $maxNumber) {
+                        $maxNumber = $number;
+                    }
+                }
+            }
+
+            $nextNumber = $maxNumber + 1;
+
+            // Use 6-digit format for consistency
+            return 'BILL-' . $year . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
         });
     }
 
@@ -309,7 +327,22 @@ class StudentBill extends Model
 
         static::creating(function ($bill) {
             if (empty($bill->bill_number)) {
-                $bill->bill_number = self::generateBillNumber();
+                // Generate unique bill number with retry logic
+                $maxRetries = 5;
+                $retryCount = 0;
+
+                do {
+                    $bill->bill_number = self::generateBillNumber($bill->school_id);
+                    // Check uniqueness within the same school
+                    $exists = self::where('bill_number', $bill->bill_number)
+                                ->where('school_id', $bill->school_id)
+                                ->exists();
+                    $retryCount++;
+                } while ($exists && $retryCount < $maxRetries);
+
+                if ($exists) {
+                    throw new \Exception('Unable to generate unique bill number after ' . $maxRetries . ' attempts');
+                }
             }
         });
     }

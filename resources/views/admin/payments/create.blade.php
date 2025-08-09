@@ -19,6 +19,28 @@
         </div>
     </div>
 
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <form action="{{ route('admin.fees.payments.store') }}" method="POST">
         @csrf
         
@@ -49,10 +71,10 @@
                                     <label for="bill_id">Bill <span class="text-danger">*</span></label>
                                     <select name="bill_id" id="bill_id" class="form-control" required>
                                         <option value="">Select Bill</option>
-                                        @if(request('bill_id'))
+                                        @if(isset($bills) && $bills->count() > 0)
                                         @foreach($bills as $bill)
                                         <option value="{{ $bill->id }}" {{ request('bill_id') == $bill->id ? 'selected' : '' }}>
-                                            {{ $bill->bill_number }} - Rs. {{ number_format($bill->balance_amount, 2) }}
+                                            {{ $bill->bill_number }} - Rs. {{ number_format($bill->balance_amount, 2) }} (Due: {{ $bill->due_date->format('M d, Y') }})
                                         </option>
                                         @endforeach
                                         @endif
@@ -85,8 +107,8 @@
                                     <label for="payment_method">Payment Method <span class="text-danger">*</span></label>
                                     <select name="payment_method" id="payment_method" class="form-control" required>
                                         <option value="">Select Method</option>
-                                        @foreach($paymentMethods as $method)
-                                        <option value="{{ $method }}">{{ ucfirst($method) }}</option>
+                                        @foreach($paymentMethods as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -101,8 +123,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="remarks">Remarks</label>
-                            <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                            <label for="notes">Remarks</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
@@ -137,7 +159,7 @@
 
                 <div class="card shadow">
                     <div class="card-body">
-                        <button type="submit" class="btn btn-primary btn-block">
+                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
                             <i class="fas fa-save me-2"></i>Record Payment
                         </button>
                         <a href="{{ route('admin.payments.index') }}" class="btn btn-secondary btn-block mt-2">
@@ -155,36 +177,96 @@ document.addEventListener('DOMContentLoaded', function() {
     const studentSelect = document.getElementById('student_id');
     const billSelect = document.getElementById('bill_id');
     const amountInput = document.getElementById('amount');
-    
+
+    // Setup CSRF token for fetch requests
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Function to load bills for a student
+    function loadStudentBills(studentId) {
+        if (!studentId) {
+            billSelect.innerHTML = '<option value="">Select Bill</option>';
+            hideBillSummary();
+            return;
+        }
+
+        // Show loading state
+        billSelect.innerHTML = '<option value="">Loading bills...</option>';
+        billSelect.disabled = true;
+
+        fetch(`{{ route('admin.fees.student-bills-by-student') }}?student_id=${studentId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(bills => {
+                billSelect.innerHTML = '<option value="">Select Bill</option>';
+                billSelect.disabled = false;
+
+                if (bills.length === 0) {
+                    billSelect.innerHTML = '<option value="">No pending bills found</option>';
+                    return;
+                }
+
+                bills.forEach(bill => {
+                    const option = document.createElement('option');
+                    option.value = bill.id;
+                    option.textContent = `${bill.bill_number} - Rs. ${bill.balance_amount} (Due: ${bill.due_date})`;
+                    billSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading bills:', error);
+                billSelect.innerHTML = '<option value="">Error loading bills</option>';
+                billSelect.disabled = false;
+
+                // Show user-friendly error message
+                alert('Error loading bills. Please refresh the page and try again.');
+            });
+
+        hideBillSummary();
+    }
+
     // Load bills when student changes
     studentSelect.addEventListener('change', function() {
-        const studentId = this.value;
-        billSelect.innerHTML = '<option value="">Select Bill</option>';
-        
-        if (studentId) {
-            fetch(`{{ route('admin.fees.student-bills-by-student') }}?student_id=${studentId}`)
-                .then(response => response.json())
-                .then(bills => {
-                    bills.forEach(bill => {
-                        const option = document.createElement('option');
-                        option.value = bill.id;
-                        option.textContent = `${bill.bill_number} - NRs. ${bill.balance_amount} (Due: ${bill.due_date})`;
-                        billSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error loading bills:', error));
-        }
-        
-        hideBillSummary();
+        loadStudentBills(this.value);
     });
+
+    // Load bills on page load if student is pre-selected
+    if (studentSelect.value) {
+        // Add a small delay to ensure everything is loaded
+        setTimeout(() => {
+            loadStudentBills(studentSelect.value);
+        }, 100);
+    }
     
     // Load bill details when bill changes
     billSelect.addEventListener('change', function() {
         const billId = this.value;
-        
+
         if (billId) {
-            fetch(`{{ url('admin/fees/bills') }}/${billId}`)
-                .then(response => response.json())
+            fetch(`{{ url('admin/fees/bills') }}/${billId}/details`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(bill => {
                     showBillSummary(bill);
                     amountInput.max = bill.balance_amount;
@@ -216,6 +298,66 @@ document.addEventListener('DOMContentLoaded', function() {
         amountInput.value = '';
         document.getElementById('maxAmount').textContent = '0.00';
     }
+
+    // Form submission handling
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', function(e) {
+        console.log('Form submission started');
+
+        // Validate required fields
+        const studentId = document.getElementById('student_id').value;
+        const billId = document.getElementById('bill_id').value;
+        const amount = document.getElementById('amount').value;
+        const paymentDate = document.getElementById('payment_date').value;
+        const paymentMethod = document.getElementById('payment_method').value;
+
+        if (!studentId) {
+            e.preventDefault();
+            alert('Please select a student.');
+            return false;
+        }
+
+        if (!billId) {
+            e.preventDefault();
+            alert('Please select a bill.');
+            return false;
+        }
+
+        if (!amount || parseFloat(amount) <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid amount.');
+            return false;
+        }
+
+        if (!paymentDate) {
+            e.preventDefault();
+            alert('Please select a payment date.');
+            return false;
+        }
+
+        if (!paymentMethod) {
+            e.preventDefault();
+            alert('Please select a payment method.');
+            return false;
+        }
+
+        // Check if amount exceeds maximum
+        const maxAmount = parseFloat(amountInput.max);
+        if (maxAmount && parseFloat(amount) > maxAmount) {
+            e.preventDefault();
+            alert(`Amount cannot exceed Rs. ${maxAmount.toFixed(2)}`);
+            return false;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+        console.log('Form validation passed, submitting...');
+        return true;
+    });
 });
 </script>
 @endsection

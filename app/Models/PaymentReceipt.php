@@ -26,6 +26,7 @@ class PaymentReceipt extends Model
         'receipt_data',
         'issued_by',
         'cancelled_by',
+        'school_id',
     ];
 
     protected $casts = [
@@ -134,18 +135,45 @@ class PaymentReceipt extends Model
     }
 
     /**
-     * Generate unique receipt number.
+     * Generate unique receipt number with proper locking to prevent duplicates.
+     * Now school-specific to avoid conflicts between schools.
      */
-    public static function generateReceiptNumber()
+    public static function generateReceiptNumber($schoolId = null)
     {
-        $year = date('Y');
-        $lastReceipt = self::whereYear('created_at', $year)
-                          ->orderBy('id', 'desc')
-                          ->first();
-        
-        $number = $lastReceipt ? (int)substr($lastReceipt->receipt_number, -3) + 1 : 1;
-        
-        return 'REC-' . $year . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($schoolId) {
+            $year = date('Y');
+
+            // Use current user's school if not provided
+            if (!$schoolId && auth()->check()) {
+                $schoolId = auth()->user()->school_id;
+            }
+
+            // Get all receipts for current year and school, extract numbers
+            $query = self::where('receipt_number', 'like', "REC-{$year}-%");
+
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
+
+            $existingReceipts = $query->pluck('receipt_number')->toArray();
+
+            $maxNumber = 0;
+
+            foreach ($existingReceipts as $receiptNumber) {
+                // Handle both 3-digit and 6-digit formats
+                if (preg_match('/REC-\d{4}-(\d+)/', $receiptNumber, $matches)) {
+                    $number = (int)$matches[1];
+                    if ($number > $maxNumber) {
+                        $maxNumber = $number;
+                    }
+                }
+            }
+
+            $nextNumber = $maxNumber + 1;
+
+            // Use 6-digit format for consistency
+            return 'REC-' . $year . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        });
     }
 
     /**
@@ -154,10 +182,25 @@ class PaymentReceipt extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($receipt) {
             if (empty($receipt->receipt_number)) {
-                $receipt->receipt_number = self::generateReceiptNumber();
+                // Generate unique receipt number with retry logic
+                $maxRetries = 5;
+                $retryCount = 0;
+
+                do {
+                    $receipt->receipt_number = self::generateReceiptNumber($receipt->school_id);
+                    // Check uniqueness within the same school
+                    $exists = self::where('receipt_number', $receipt->receipt_number)
+                                ->where('school_id', $receipt->school_id)
+                                ->exists();
+                    $retryCount++;
+                } while ($exists && $retryCount < $maxRetries);
+
+                if ($exists) {
+                    throw new \Exception('Unable to generate unique receipt number after ' . $maxRetries . ' attempts');
+                }
             }
         });
     }

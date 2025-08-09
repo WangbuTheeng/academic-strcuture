@@ -101,12 +101,20 @@
                         <!-- School Logo -->
                         <div class="mb-3">
                             <label for="institution_logo" class="form-label">School Logo</label>
-                            <input type="file" class="form-control @error('institution_logo') is-invalid @enderror" 
-                                   id="institution_logo" name="institution_logo" accept="image/*">
+                            <input type="file" class="form-control @error('institution_logo') is-invalid @enderror"
+                                   id="institution_logo" name="institution_logo" accept="image/*" onchange="previewLogo(this)">
                             <div class="form-text">Upload a logo image (JPEG, PNG, JPG, GIF). Maximum size: 2MB</div>
                             @error('institution_logo')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+
+                            <!-- Logo Preview -->
+                            <div id="logoPreview" class="mt-3" style="display: none;">
+                                <label class="form-label">Preview:</label>
+                                <div class="border rounded p-2 text-center">
+                                    <img id="logoPreviewImg" src="" alt="Logo Preview" style="max-height: 150px;">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-end">
@@ -129,7 +137,12 @@
                     <!-- Logo Preview -->
                     <div class="mb-3">
                         @if($settings->institution_logo)
-                            <img src="{{ $settings->logo_url }}" alt="School Logo" class="img-fluid" style="max-height: 100px;">
+                            <img src="{{ asset('storage/' . $settings->institution_logo) }}" alt="School Logo"
+                                 class="img-fluid" style="max-height: 100px; border: 1px solid #ddd; border-radius: 8px;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div style="display: none;" class="alert alert-warning">
+                                <small>Logo file not found: {{ $settings->institution_logo }}</small>
+                            </div>
                         @else
                             <div class="bg-light p-4 rounded">
                                 <i class="fas fa-school fa-3x text-muted"></i>
@@ -190,3 +203,25 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function previewLogo(input) {
+    const preview = document.getElementById('logoPreview');
+    const previewImg = document.getElementById('logoPreviewImg');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+</script>
+@endpush

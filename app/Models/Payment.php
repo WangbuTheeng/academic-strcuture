@@ -30,6 +30,7 @@ class Payment extends Model
         'remarks',
         'created_by',
         'updated_by',
+        'school_id',
     ];
 
     protected $casts = [
@@ -189,18 +190,45 @@ class Payment extends Model
     }
 
     /**
-     * Generate unique payment number.
+     * Generate unique payment number with proper locking to prevent duplicates.
+     * Now school-specific to avoid conflicts between schools.
      */
-    public static function generatePaymentNumber()
+    public static function generatePaymentNumber($schoolId = null)
     {
-        $year = date('Y');
-        $lastPayment = self::whereYear('created_at', $year)
-                          ->orderBy('id', 'desc')
-                          ->first();
-        
-        $number = $lastPayment ? (int)substr($lastPayment->payment_number, -3) + 1 : 1;
-        
-        return 'PAY-' . $year . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($schoolId) {
+            $year = date('Y');
+
+            // Use current user's school if not provided
+            if (!$schoolId && auth()->check()) {
+                $schoolId = auth()->user()->school_id;
+            }
+
+            // Get all payments for current year and school, extract numbers
+            $query = self::where('payment_number', 'like', "PAY-{$year}-%");
+
+            if ($schoolId) {
+                $query->where('school_id', $schoolId);
+            }
+
+            $existingPayments = $query->pluck('payment_number')->toArray();
+
+            $maxNumber = 0;
+
+            foreach ($existingPayments as $paymentNumber) {
+                // Handle both 3-digit and 6-digit formats
+                if (preg_match('/PAY-\d{4}-(\d+)/', $paymentNumber, $matches)) {
+                    $number = (int)$matches[1];
+                    if ($number > $maxNumber) {
+                        $maxNumber = $number;
+                    }
+                }
+            }
+
+            $nextNumber = $maxNumber + 1;
+
+            // Use 6-digit format for consistency
+            return 'PAY-' . $year . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        });
     }
 
     /**
@@ -209,10 +237,25 @@ class Payment extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($payment) {
             if (empty($payment->payment_number)) {
-                $payment->payment_number = self::generatePaymentNumber();
+                // Generate unique payment number with retry logic
+                $maxRetries = 5;
+                $retryCount = 0;
+
+                do {
+                    $payment->payment_number = self::generatePaymentNumber($payment->school_id);
+                    // Check uniqueness within the same school
+                    $exists = self::where('payment_number', $payment->payment_number)
+                                ->where('school_id', $payment->school_id)
+                                ->exists();
+                    $retryCount++;
+                } while ($exists && $retryCount < $maxRetries);
+
+                if ($exists) {
+                    throw new \Exception('Unable to generate unique payment number after ' . $maxRetries . ' attempts');
+                }
             }
         });
 

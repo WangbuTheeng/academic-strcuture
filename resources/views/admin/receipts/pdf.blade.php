@@ -1,29 +1,313 @@
-@extends('admin.shared.billing-template', [
-    'documentTitle' => 'Payment Receipt - ' . ($receipt->receipt_number ?? $receipt->id),
-    'documentType' => 'PAYMENT RECEIPT',
-    'instituteSettings' => $instituteSettings
-])
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt - {{ $receipt->receipt_number ?? $receipt->id }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-@section('document-content')
-<!-- Receipt Information -->
-<div class="document-info">
-    <div class="info-section">
-        <div class="info-title">Receipt Information</div>
-        <div class="info-row">
-            <span class="info-label">Receipt Number:</span>
-            <span class="info-value">{{ $receipt->receipt_number ?? $receipt->id }}</span>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+
+        /* Half A4 page sizing for PDF */
+        .receipt-container {
+            width: 210mm;
+            height: 148mm;
+            margin: 0 auto;
+            padding: 15mm;
+            background: white;
+            position: relative;
+        }
+
+        /* Header with logo and institution details */
+        .receipt-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2c3e50;
+        }
+
+        .logo-section {
+            width: 80px;
+            height: 80px;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .logo-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .logo-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        .institution-details {
+            flex: 1;
+            text-align: center;
+        }
+
+        .institution-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .institution-address {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .receipt-title {
+            text-align: center;
+            background: #34495e;
+            color: white;
+            padding: 8px;
+            margin: 15px -15mm;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        /* Receipt content */
+        .receipt-content {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left-section, .right-section {
+            flex: 1;
+        }
+
+        .info-group {
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .info-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 600;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Payment details table */
+        .payment-details {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-details th,
+        .payment-details td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+
+        .payment-details th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .amount-cell {
+            text-align: right;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        /* Footer */
+        .receipt-footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .signature-section {
+            text-align: center;
+        }
+
+        .signature-line {
+            width: 150px;
+            border-bottom: 1px solid #333;
+            margin: 20px auto 5px;
+        }
+
+        .signature-label {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .receipt-date {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #27ae60;
+            color: white;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <!-- Header -->
+        <div class="receipt-header">
+            <div class="logo-section">
+                @if(isset($instituteSettings->institution_logo) && $instituteSettings->institution_logo)
+                    <img src="{{ public_path('storage/' . $instituteSettings->institution_logo) }}" alt="Institution Logo">
+                @else
+                    <div class="logo-placeholder">
+                        {{ substr($instituteSettings->institution_name ?? 'AMS', 0, 3) }}
+                    </div>
+                @endif
+            </div>
+
+            <div class="institution-details">
+                <div class="institution-name">{{ $instituteSettings->institution_name ?? 'Academic Institution' }}</div>
+                <div class="institution-address">{{ $instituteSettings->institution_address ?? 'Institution Address' }}</div>
+                <div class="institution-address">Phone: {{ $instituteSettings->institution_phone ?? '+977-1-XXXXXXX' }}</div>
+                <div class="institution-address">Email: {{ $instituteSettings->institution_email ?? 'info@institution.edu.np' }}</div>
+            </div>
         </div>
-        <div class="info-row">
-            <span class="info-label">Receipt Date:</span>
-            <span class="info-value">{{ $receipt->receipt_date->format('M d, Y') }}</span>
+
+        <div class="receipt-title">PAYMENT RECEIPT</div>
+
+        <!-- Receipt Content -->
+        <div class="receipt-content">
+            <div class="left-section">
+                <div class="info-group">
+                    <div class="info-label">Receipt No:</div>
+                    <div class="info-value">{{ $receipt->receipt_number ?? $receipt->id }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Date:</div>
+                    <div class="info-value">{{ $receipt->receipt_date->format('M d, Y') }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Payment Method:</div>
+                    <div class="info-value">{{ ucwords(str_replace('_', ' ', $receipt->payment_method)) }}</div>
+                </div>
+
+                @if($receipt->payment->reference_number)
+                <div class="info-group">
+                    <div class="info-label">Reference No:</div>
+                    <div class="info-value">{{ $receipt->payment->reference_number }}</div>
+                </div>
+                @endif
+            </div>
+
+            <div class="right-section">
+                <div class="info-group">
+                    <div class="info-label">Student:</div>
+                    <div class="info-value">{{ $receipt->payment->student->full_name ?? 'N/A' }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Admission No:</div>
+                    <div class="info-value">{{ $receipt->payment->student->admission_number ?? 'N/A' }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Class:</div>
+                    <div class="info-value">{{ $receipt->payment->student->currentEnrollment->class->name ?? 'N/A' }}</div>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-label">Bill Status:</div>
+                    <div class="info-value">
+                        <span class="status-badge">{{ ucfirst($receipt->payment->bill->status) }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="info-row">
-            <span class="info-label">Payment Method:</span>
-            <span class="info-value">{{ ucwords(str_replace('_', ' ', $receipt->payment_method)) }}</span>
+
+        <!-- Payment Details -->
+        <table class="payment-details">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Payment for Bill {{ $receipt->payment->bill->bill_number }}</td>
+                    <td class="amount-cell">NRs. {{ number_format($receipt->amount, 2) }}</td>
+                </tr>
+                <tr style="background: #f8f9fa; font-weight: bold;">
+                    <td><strong>Total Paid Amount</strong></td>
+                    <td class="amount-cell"><strong>NRs. {{ number_format($receipt->amount, 2) }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="receipt-footer">
+            <div class="signature-section">
+                <div class="signature-line"></div>
+                <div class="signature-label">Received by: {{ $receipt->issuer->name ?? 'Administrator' }}</div>
+            </div>
+
+            <div class="receipt-date">
+                <div>Date: {{ now()->format('M d, Y') }}</div>
+                <div style="margin-top: 5px; font-size: 9px;">This is a computer generated receipt</div>
+            </div>
         </div>
-        @if($receipt->payment->reference_number)
-        <div class="info-row">
-            <span class="info-label">Reference Number:</span>
+    </div>
+</body>
+</html>
             <span class="info-value">{{ $receipt->payment->reference_number }}</span>
         </div>
         @endif

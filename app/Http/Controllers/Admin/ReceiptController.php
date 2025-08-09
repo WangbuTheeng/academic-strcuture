@@ -146,6 +146,7 @@ class ReceiptController extends Controller
             'remarks' => 'Duplicate of receipt: ' . $originalReceipt->receipt_number,
             'receipt_data' => $originalReceipt->receipt_data,
             'issued_by' => Auth::id(),
+            'school_id' => Auth::user()->school_id,
         ]);
 
         return redirect()->route('admin.receipts.show', $duplicateReceipt)
@@ -201,6 +202,7 @@ class ReceiptController extends Controller
                 'amount' => $payment->amount,
                 'payment_method' => $payment->payment_method,
                 'issued_by' => Auth::id(),
+                'school_id' => Auth::user()->school_id,
             ]);
 
             $generatedCount++;

@@ -199,6 +199,7 @@ class EnhancedPaymentController extends Controller
                     'verification_date' => now(),
                     'verified_by' => Auth::id(),
                     'created_by' => Auth::id(),
+                    'school_id' => Auth::user()->school_id,
                 ]);
 
                 // Create receipt
@@ -209,6 +210,7 @@ class EnhancedPaymentController extends Controller
                     'amount' => $payment->amount,
                     'payment_method' => $payment->payment_method,
                     'issued_by' => Auth::id(),
+                    'school_id' => Auth::user()->school_id,
                 ]);
 
                 // Update bill amounts
@@ -340,6 +342,7 @@ class EnhancedPaymentController extends Controller
                     'verification_date' => now(),
                     'verified_by' => Auth::id(),
                     'created_by' => Auth::id(),
+                    'school_id' => Auth::user()->school_id,
                 ]);
 
                 // Create receipt
@@ -350,6 +353,7 @@ class EnhancedPaymentController extends Controller
                     'amount' => $payment->amount,
                     'payment_method' => $payment->payment_method,
                     'issued_by' => Auth::id(),
+                    'school_id' => Auth::user()->school_id,
                 ]);
 
                 // Update bill amounts
@@ -461,7 +465,7 @@ class EnhancedPaymentController extends Controller
                         'amount' => $request->amount_per_student,
                         'payment_date' => $request->payment_date,
                         'payment_method' => $request->payment_method,
-                        'reference_number' => $request->reference_prefix ? 
+                        'reference_number' => $request->reference_prefix ?
                             $request->reference_prefix . '-' . $student->admission_number : null,
                         'remarks' => $request->remarks,
                         'status' => 'verified',
@@ -469,6 +473,7 @@ class EnhancedPaymentController extends Controller
                         'verification_date' => now(),
                         'verified_by' => Auth::id(),
                         'created_by' => Auth::id(),
+                        'school_id' => Auth::user()->school_id,
                     ]);
 
                     // Create receipt
@@ -479,6 +484,7 @@ class EnhancedPaymentController extends Controller
                         'amount' => $payment->amount,
                         'payment_method' => $payment->payment_method,
                         'issued_by' => Auth::id(),
+                        'school_id' => Auth::user()->school_id,
                     ]);
 
                     // Update bill amounts

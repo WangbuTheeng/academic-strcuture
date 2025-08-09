@@ -75,7 +75,7 @@ class FixDuplicateBillNumbers extends Command
                 $this->info("🔧 Fixing bill ID {$bill->id} (was: {$bill->bill_number})");
 
                 if (!$dryRun) {
-                    $newBillNumber = $this->generateUniqueBillNumber();
+                    $newBillNumber = $this->generateUniqueBillNumber($bill->school_id);
                     $bill->update(['bill_number' => $newBillNumber]);
                     $this->info("  ✅ New number: {$newBillNumber}");
                 } else {
@@ -103,13 +103,15 @@ class FixDuplicateBillNumbers extends Command
     }
 
     /**
-     * Generate a unique bill number
+     * Generate a unique bill number for a specific school
      */
-    private function generateUniqueBillNumber(): string
+    private function generateUniqueBillNumber(int $schoolId): string
     {
         do {
-            $billNumber = StudentBill::generateBillNumber();
-            $exists = StudentBill::where('bill_number', $billNumber)->exists();
+            $billNumber = StudentBill::generateBillNumber($schoolId);
+            $exists = StudentBill::where('bill_number', $billNumber)
+                                ->where('school_id', $schoolId)
+                                ->exists();
         } while ($exists);
 
         return $billNumber;

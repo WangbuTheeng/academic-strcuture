@@ -226,6 +226,7 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::get('payments/quick/entry', [\App\Http\Controllers\Admin\PaymentController::class, 'quickEntry'])->name('payments.quick-entry');
         Route::post('payments/quick/process', [\App\Http\Controllers\Admin\PaymentController::class, 'processQuickEntry'])->name('payments.process-quick-entry');
         Route::get('student-bills-by-student', [\App\Http\Controllers\Admin\PaymentController::class, 'getStudentBills'])->name('student-bills-by-student');
+        Route::get('bills/{bill}/details', [\App\Http\Controllers\Admin\PaymentController::class, 'getBillDetails'])->name('bills.details');
 
         // Receipt management
         Route::resource('receipts', \App\Http\Controllers\Admin\ReceiptController::class)->only(['index', 'show']);
@@ -352,11 +353,17 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::get('student-bills', [\App\Http\Controllers\Admin\StudentBillController::class, 'index'])->name('index');
         Route::get('student-bills/create', [\App\Http\Controllers\Admin\StudentBillController::class, 'create'])->name('create');
         Route::post('student-bills', [\App\Http\Controllers\Admin\StudentBillController::class, 'store'])->name('store');
-        Route::get('student-bills/{studentBill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'show'])->name('show');
-        Route::get('student-bills/{studentBill}/edit', [\App\Http\Controllers\Admin\StudentBillController::class, 'edit'])->name('edit');
-        Route::get('student-bills/{studentBill}/preview', [\App\Http\Controllers\Admin\StudentBillController::class, 'preview'])->name('preview');
-        Route::put('student-bills/{studentBill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'update'])->name('update');
-        Route::delete('student-bills/{studentBill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'destroy'])->name('destroy');
+        Route::get('student-bills/{bill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'show'])->name('show');
+        Route::get('student-bills/{bill}/edit', [\App\Http\Controllers\Admin\StudentBillController::class, 'edit'])->name('edit');
+        Route::get('student-bills/{bill}/preview', [\App\Http\Controllers\Admin\StudentBillController::class, 'preview'])->name('preview');
+        Route::put('student-bills/{bill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'update'])->name('update');
+        Route::delete('student-bills/{bill}', [\App\Http\Controllers\Admin\StudentBillController::class, 'destroy'])->name('destroy');
+
+        // Bulk generation routes
+        Route::get('student-bills/bulk/generate', [\App\Http\Controllers\Admin\StudentBillController::class, 'bulkGenerate'])->name('bulk-generate');
+        Route::post('student-bills/bulk/process', [\App\Http\Controllers\Admin\StudentBillController::class, 'processBulkGenerate'])->name('process-bulk-generate');
+        Route::post('student-bills/bulk/preview-students', [\App\Http\Controllers\Admin\StudentBillController::class, 'previewStudents'])->name('preview-students');
+        Route::match(['GET', 'POST'], 'student-bills/bulk/print', [\App\Http\Controllers\Admin\StudentBillController::class, 'printBulkBills'])->name('print-bulk');
     });
 
     // Enhanced payments route aliases

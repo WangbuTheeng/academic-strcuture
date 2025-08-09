@@ -90,24 +90,27 @@ class PaymentController extends Controller
     {
         $students = Student::active()->orderBy('first_name')->get();
         $paymentMethods = Payment::getPaymentMethods();
-        
+
         // If student_id is provided, get their pending bills
         $selectedStudent = null;
         $pendingBills = collect();
-        
+        $bills = collect(); // Add bills variable for the view
+
         if ($request->filled('student_id')) {
             $selectedStudent = Student::findOrFail($request->student_id);
             $pendingBills = $selectedStudent->pendingBills()
                 ->with(['billItems'])
                 ->orderBy('due_date')
                 ->get();
+            $bills = $pendingBills; // Set bills for dropdown
         }
 
         return view('admin.payments.create', compact(
             'students',
             'paymentMethods',
             'selectedStudent',
-            'pendingBills'
+            'pendingBills',
+            'bills'
         ));
     }
 
@@ -155,6 +158,7 @@ class PaymentController extends Controller
                 'verification_date' => now(),
                 'verified_by' => Auth::id(),
                 'created_by' => Auth::id(),
+                'school_id' => Auth::user()->school_id,
             ]);
 
             // Create receipt
@@ -165,6 +169,7 @@ class PaymentController extends Controller
                 'amount' => $payment->amount,
                 'payment_method' => $payment->payment_method,
                 'issued_by' => Auth::id(),
+                'school_id' => Auth::user()->school_id,
             ]);
 
             // Update bill amounts
@@ -295,6 +300,7 @@ class PaymentController extends Controller
                     'amount' => $payment->amount,
                     'payment_method' => $payment->payment_method,
                     'issued_by' => Auth::id(),
+                    'school_id' => Auth::user()->school_id,
                 ]);
             }
 
@@ -330,13 +336,71 @@ class PaymentController extends Controller
      */
     public function getStudentBills(Request $request)
     {
-        $bills = StudentBill::where('student_id', $request->student_id)
-            ->whereIn('status', ['pending', 'partial', 'overdue'])
-            ->with(['billItems'])
-            ->orderBy('due_date')
-            ->get();
+        try {
+            $request->validate([
+                'student_id' => 'required|exists:students,id'
+            ]);
 
-        return response()->json($bills);
+            // Get bills for the student with proper data isolation
+            $bills = StudentBill::where('student_id', $request->student_id)
+                ->where('school_id', auth()->user()->school_id) // Ensure school isolation
+                ->whereIn('status', ['pending', 'partial', 'overdue'])
+                ->with(['billItems'])
+                ->orderBy('due_date')
+                ->get()
+                ->map(function ($bill) {
+                    return [
+                        'id' => $bill->id,
+                        'bill_number' => $bill->bill_number,
+                        'balance_amount' => number_format($bill->balance_amount, 2),
+                        'due_date' => $bill->due_date->format('Y-m-d'),
+                        'total_amount' => number_format($bill->total_amount, 2),
+                        'paid_amount' => number_format($bill->paid_amount, 2),
+                        'status' => $bill->status
+                    ];
+                });
+
+            return response()->json($bills);
+        } catch (\Exception $e) {
+            \Log::error('Error getting student bills', [
+                'error' => $e->getMessage(),
+                'student_id' => $request->student_id ?? 'not provided'
+            ]);
+
+            return response()->json(['error' => 'Failed to load bills'], 500);
+        }
+    }
+
+    /**
+     * Get bill details (AJAX).
+     */
+    public function getBillDetails(Request $request, $billId)
+    {
+        $bill = StudentBill::where('id', $billId)
+            ->where('school_id', auth()->user()->school_id) // Ensure school isolation
+            ->with(['billItems', 'student'])
+            ->first();
+
+        if (!$bill) {
+            return response()->json(['error' => 'Bill not found'], 404);
+        }
+
+        return response()->json([
+            'id' => $bill->id,
+            'bill_number' => $bill->bill_number,
+            'total_amount' => $bill->total_amount,
+            'paid_amount' => $bill->paid_amount,
+            'balance_amount' => $bill->balance_amount,
+            'due_date' => $bill->due_date->format('Y-m-d'),
+            'status' => $bill->status,
+            'bill_items' => $bill->billItems->map(function ($item) {
+                return [
+                    'description' => $item->description,
+                    'amount' => $item->amount,
+                    'fee_category' => $item->fee_category
+                ];
+            })
+        ]);
     }
 
     /**
@@ -398,6 +462,7 @@ class PaymentController extends Controller
                 'verification_date' => now(),
                 'verified_by' => Auth::id(),
                 'created_by' => Auth::id(),
+                'school_id' => Auth::user()->school_id,
             ]);
 
             // Create receipt
@@ -408,6 +473,7 @@ class PaymentController extends Controller
                 'amount' => $payment->amount,
                 'payment_method' => $payment->payment_method,
                 'issued_by' => Auth::id(),
+                'school_id' => Auth::user()->school_id,
             ]);
 
             // Update bill amounts

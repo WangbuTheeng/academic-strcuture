@@ -25,7 +25,9 @@ class FeeStructureController extends Controller
      */
     public function index(Request $request)
     {
-        $query = FeeStructure::with(['academicYear', 'level', 'program', 'class']);
+        // Only show fee structures for current school
+        $query = FeeStructure::with(['academicYear', 'level', 'program', 'class'])
+                            ->where('school_id', auth()->user()->school_id);
 
         // Filter by academic year
         if ($request->filled('academic_year_id')) {
@@ -116,7 +118,10 @@ class FeeStructureController extends Controller
             'grace_period_days' => 'nullable|integer|min:0',
         ]);
 
-        FeeStructure::create($request->all());
+        $data = $request->all();
+        $data['school_id'] = auth()->user()->school_id;
+
+        FeeStructure::create($data);
 
         return redirect()->route('admin.fees.structures.index')
             ->with('success', 'Fee structure created successfully.');
@@ -127,8 +132,13 @@ class FeeStructureController extends Controller
      */
     public function show(FeeStructure $feeStructure)
     {
+        // Ensure fee structure belongs to current school
+        if ($feeStructure->school_id !== auth()->user()->school_id) {
+            abort(404);
+        }
+
         $feeStructure->load(['academicYear', 'level', 'program', 'class']);
-        
+
         return view('admin.fee-structures.show', compact('feeStructure'));
     }
 
@@ -137,6 +147,11 @@ class FeeStructureController extends Controller
      */
     public function edit(FeeStructure $feeStructure)
     {
+        // Ensure fee structure belongs to current school
+        if ($feeStructure->school_id !== auth()->user()->school_id) {
+            abort(404);
+        }
+
         $academicYears = AcademicYear::orderBy('name')->get();
         $levels = Level::orderBy('name')->get();
         $programs = Program::orderBy('name')->get();
@@ -160,6 +175,11 @@ class FeeStructureController extends Controller
      */
     public function update(Request $request, FeeStructure $feeStructure)
     {
+        // Ensure fee structure belongs to current school
+        if ($feeStructure->school_id !== auth()->user()->school_id) {
+            abort(404);
+        }
+
         $request->validate([
             'academic_year_id' => 'required|exists:academic_years,id',
             'fee_category' => 'required|string|max:100',
@@ -182,6 +202,11 @@ class FeeStructureController extends Controller
      */
     public function destroy(FeeStructure $feeStructure)
     {
+        // Ensure fee structure belongs to current school
+        if ($feeStructure->school_id !== auth()->user()->school_id) {
+            abort(404);
+        }
+
         $feeStructure->delete();
 
         return redirect()->route('admin.fees.structures.index')
@@ -193,12 +218,17 @@ class FeeStructureController extends Controller
      */
     public function toggleStatus(FeeStructure $structure)
     {
+        // Ensure fee structure belongs to current school
+        if ($structure->school_id !== auth()->user()->school_id) {
+            abort(404);
+        }
+
         $structure->update([
             'is_active' => !$structure->is_active
         ]);
 
         $status = $structure->is_active ? 'activated' : 'deactivated';
-        
+
         return redirect()->back()
             ->with('success', "Fee structure {$status} successfully.");
     }

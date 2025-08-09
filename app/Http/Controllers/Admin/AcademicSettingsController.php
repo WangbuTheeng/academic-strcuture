@@ -27,13 +27,13 @@ class AcademicSettingsController extends Controller
     public function updateSchoolInfo(Request $request)
     {
         $validated = $request->validate([
-            'school_name' => 'required|string|max:255',
-            'school_address' => 'required|string|max:500',
-            'school_phone' => 'required|string|max:20',
-            'school_email' => 'nullable|email|max:255',
-            'school_website' => 'nullable|url|max:255',
+            'institution_name' => 'required|string|max:255',
+            'institution_address' => 'required|string|max:500',
+            'institution_phone' => 'required|string|max:20',
+            'institution_email' => 'nullable|email|max:255',
+            'institution_website' => 'nullable|url|max:255',
             'principal_name' => 'nullable|string|max:255',
-            'school_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'institution_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'school_motto' => 'nullable|string|max:500',
             'established_year' => 'nullable|integer|min:1800|max:' . date('Y'),
             'affiliation' => 'nullable|string|max:255',
@@ -42,14 +42,14 @@ class AcademicSettingsController extends Controller
         $settings = InstituteSettings::first() ?? new InstituteSettings();
 
         // Handle logo upload
-        if ($request->hasFile('school_logo')) {
+        if ($request->hasFile('institution_logo')) {
             // Delete old logo if exists
-            if ($settings->school_logo && Storage::disk('public')->exists($settings->school_logo)) {
-                Storage::disk('public')->delete($settings->school_logo);
+            if ($settings->institution_logo && Storage::disk('public')->exists($settings->institution_logo)) {
+                Storage::disk('public')->delete($settings->institution_logo);
             }
 
-            $logoPath = $request->file('school_logo')->store('logos', 'public');
-            $validated['school_logo'] = $logoPath;
+            $logoPath = $request->file('institution_logo')->store('institute/logos', 'public');
+            $validated['institution_logo'] = $logoPath;
         }
 
         $settings->fill($validated);

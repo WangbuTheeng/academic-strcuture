@@ -180,52 +180,17 @@
                        class="btn btn-success btn-block mt-2">
                         <i class="fas fa-file-invoice me-2"></i>View Bill
                     </a>
-                    <button type="button" class="btn btn-secondary btn-block mt-2" onclick="printReceipt()">
+                    <a href="{{ route('admin.fees.receipts.print', $receipt) }}"
+                       class="btn btn-secondary btn-block mt-2" target="_blank">
                         <i class="fas fa-print me-2"></i>Print Receipt
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-function printReceipt() {
-    const receiptContent = document.querySelector('.receipt-preview').innerHTML;
-    const printWindow = window.open('', '_blank');
-    
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Receipt #{{ $receipt->id }}</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                .table th { background-color: #f8f9fa; }
-                .text-center { text-align: center; }
-                .text-right { text-align: right; }
-                .mb-4 { margin-bottom: 20px; }
-                .mt-4 { margin-top: 20px; }
-                @media print {
-                    body { margin: 0; }
-                    .no-print { display: none; }
-                }
-            </style>
-        </head>
-        <body>
-            ${receiptContent}
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-}
-</script>
+
 
 <style>
 .receipt-preview {

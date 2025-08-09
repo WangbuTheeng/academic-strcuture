@@ -13,10 +13,10 @@
             <p class="text-muted mb-0">Manage student billing and payment tracking</p>
         </div>
         <div class="btn-group">
-            <a href="{{ route('admin.fees.bills.create') }}" class="btn btn-primary">
+            <a href="{{ route('admin.student-bills.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i>Create Bill
             </a>
-            <a href="{{ route('admin.fees.bills.bulk-generate') }}" class="btn btn-success">
+            <a href="{{ route('admin.student-bills.bulk-generate') }}" class="btn btn-success">
                 <i class="fas fa-layer-group me-2"></i>Bulk Generate
             </a>
         </div>
@@ -182,6 +182,15 @@
                 <button type="button" class="btn btn-outline-secondary" onclick="clearSelection()">
                     <i class="fas fa-square me-1"></i>Clear
                 </button>
+                <button type="button" class="btn btn-outline-success" onclick="printSelectedBills()">
+                    <i class="fas fa-print me-1"></i>Print Selected
+                </button>
+                @if(config('app.debug'))
+                    <a href="{{ route('admin.student-bills.print-bulk', ['bill_ids' => '1,2', 'debug' => '1']) }}"
+                       target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-bug me-1"></i>Test Print
+                    </a>
+                @endif
             </div>
         </div>
         <div class="card-body">
@@ -254,6 +263,9 @@
                                         @if($bill->is_locked)
                                             <br><span class="badge bg-secondary mt-1">Locked</span>
                                         @endif
+                                        @if($bill->paid_amount > 0 && $bill->status !== 'paid')
+                                            <br><span class="badge bg-warning mt-1" title="Cannot edit - has payments">Has Payments</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
@@ -265,8 +277,8 @@
                                                class="btn btn-sm btn-outline-info" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if(!$bill->is_locked && $bill->status !== 'paid')
-                                                <a href="{{ route('admin.fees.bills.edit', $bill) }}" 
+                                            @if(!$bill->is_locked && $bill->status !== 'paid' && $bill->paid_amount == 0)
+                                                <a href="{{ route('admin.fees.bills.edit', $bill) }}"
                                                    class="btn btn-sm btn-outline-primary" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
@@ -398,6 +410,22 @@
         // Implementation for exporting selected bills
         console.log('Exporting bills:', billIds);
         alert('Export functionality will be implemented in the next phase.');
+    }
+
+    function printSelectedBills() {
+        const selectedBills = getSelectedBills();
+
+        if (selectedBills.length === 0) {
+            alert('Please select at least one bill to print.');
+            return;
+        }
+
+        // Create URL with bill IDs as query parameters
+        const billIdsString = selectedBills.join(',');
+        const printUrl = '{{ route("admin.student-bills.print-bulk") }}' + '?bill_ids=' + encodeURIComponent(billIdsString);
+
+        // Open in new tab
+        window.open(printUrl, '_blank');
     }
 
     // Auto-submit form on filter change
