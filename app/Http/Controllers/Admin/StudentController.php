@@ -384,7 +384,9 @@ class StudentController extends Controller
             $extension = $file->getClientOriginalExtension();
 
             // Process the import
-            $import = new StudentsImport($school);
+            // By default, skip existing students for easier workflow
+            $skipExisting = $request->get('skip_existing', true);
+            $import = new StudentsImport($school, $skipExisting);
 
             if ($extension === 'csv') {
                 // Handle CSV files
@@ -397,18 +399,39 @@ class StudentController extends Controller
             $import->processData($data);
             $results = $import->getResults();
 
-            // Prepare success message
+            // Prepare detailed success message
             $message = "Import completed! {$results['success_count']} students imported successfully.";
 
-            if ($results['error_count'] > 0) {
-                $message .= " {$results['error_count']} rows had errors.";
+            $hasIssues = false;
 
-                // Store errors in session for display
+            if ($results['skipped_count'] > 0) {
+                $message .= " {$results['skipped_count']} existing students were automatically skipped.";
+            }
+
+            if ($results['duplicate_count'] > 0) {
+                $message .= " {$results['duplicate_count']} duplicate entries were found.";
+                $hasIssues = true;
+            }
+
+            if ($results['error_count'] > 0) {
+                $message .= " {$results['error_count']} rows had validation errors.";
+                $hasIssues = true;
+            }
+
+            // Store detailed errors in session for display
+            if ($hasIssues && !empty($results['errors'])) {
                 session()->flash('import_errors', $results['errors']);
+                session()->flash('import_summary', [
+                    'success_count' => $results['success_count'],
+                    'error_count' => $results['error_count'],
+                    'duplicate_count' => $results['duplicate_count'],
+                    'skipped_count' => $results['skipped_count'],
+                    'total_processed' => $results['total_processed']
+                ]);
             }
 
             return redirect()->route('admin.students.index')
-                            ->with('success', $message);
+                            ->with($hasIssues ? 'warning' : 'success', $message);
 
         } catch (\Exception $e) {
             return redirect()->back()
@@ -460,7 +483,7 @@ class StudentController extends Controller
         // Generate CSV template (more reliable than Excel)
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="student_import_template.csv"',
+            'Content-Disposition' => 'attachment; filename="student_master_import_template.csv"',
         ];
 
         $callback = function() {
@@ -473,7 +496,7 @@ class StudentController extends Controller
                 'guardian_relation', 'admission_date', 'nationality', 'status'
             ]);
 
-            // Add sample data
+            // Add sample data demonstrating the workflow
             fputcsv($file, [
                 'John', 'Doe', '2010-01-15', 'Male', '9841234567',
                 'john.doe@example.com', '123 Main St, Kathmandu', 'Jane Doe', '9841234568',
@@ -484,6 +507,17 @@ class StudentController extends Controller
                 'Jane', 'Smith', '2011-03-20', 'Female', '9841234569',
                 'jane.smith@example.com', '456 Oak Ave, Lalitpur', 'John Smith', '9841234570',
                 'Father', '2024-04-01', 'Nepali', 'active'
+            ]);
+
+            fputcsv($file, [
+                'Mike', 'Johnson', '2012-05-10', 'Male', '9841234571',
+                'mike.johnson@example.com', '789 Pine St, Bhaktapur', 'Sarah Johnson', '9841234572',
+                'Mother', '2024-04-01', 'Nepali', 'active'
+            ]);
+
+            // Add a comment row (will be skipped during import)
+            fputcsv($file, [
+                '# Add new students below this line - existing students will be automatically skipped during import'
             ]);
 
             fclose($file);

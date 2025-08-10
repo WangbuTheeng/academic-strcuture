@@ -96,12 +96,30 @@
 
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
-                            <textarea name="description" id="description" rows="3" 
-                                      class="form-control @error('description') is-invalid @enderror" 
+                            <textarea name="description" id="description" rows="3"
+                                      class="form-control @error('description') is-invalid @enderror"
                                       placeholder="Optional bill description">{{ old('description') }}</textarea>
                             @error('description')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <!-- Include Previous Dues Option -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="include_previous_dues" id="include_previous_dues"
+                                       class="form-check-input" value="1" {{ old('include_previous_dues') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="include_previous_dues">
+                                    <strong>Include Previous Outstanding Dues</strong>
+                                    <small class="text-muted d-block">Add any unpaid amounts from previous bills to this new bill</small>
+                                </label>
+                            </div>
+                            <div id="previous-dues-info" class="mt-2" style="display: none;">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <span id="previous-dues-text">Select a student to see previous dues</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Fee Items Selection -->
@@ -234,38 +252,85 @@
     document.getElementById('student_id').addEventListener('change', function() {
         const studentId = this.value;
         const studentInfo = document.getElementById('student-info');
-        
+        const previousDuesInfo = document.getElementById('previous-dues-info');
+        const previousDuesText = document.getElementById('previous-dues-text');
+
         if (studentId) {
-            // You can implement AJAX call to get student details
+            // Show loading state
             studentInfo.innerHTML = `
                 <div class="text-center">
                     <i class="fas fa-spinner fa-spin"></i> Loading student information...
                 </div>
             `;
-            
-            // Simulate loading student info (replace with actual AJAX call)
-            setTimeout(() => {
-                const selectedOption = this.options[this.selectedIndex];
-                const studentName = selectedOption.text.split(' (')[0];
-                const admissionNumber = selectedOption.text.match(/\(([^)]+)\)/)?.[1] || 'N/A';
-                
-                studentInfo.innerHTML = `
-                    <div class="mb-2">
-                        <label class="form-label text-muted">Name</label>
-                        <div class="fw-bold">${studentName}</div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label text-muted">Admission Number</label>
-                        <div>${admissionNumber}</div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label text-muted">Status</label>
-                        <div><span class="badge bg-success">Active</span></div>
-                    </div>
-                `;
-            }, 1000);
+
+            // Fetch student information and previous dues via AJAX
+            fetch(`/admin/students/${studentId}/bill-info`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update student information
+                    studentInfo.innerHTML = `
+                        <div class="mb-2">
+                            <label class="form-label text-muted">Name</label>
+                            <div class="fw-bold">${data.student.full_name}</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted">Admission Number</label>
+                            <div>${data.student.admission_number}</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted">Class</label>
+                            <div>${data.student.current_class || 'Not Enrolled'}</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted">Status</label>
+                            <div><span class="badge bg-success">Active</span></div>
+                        </div>
+                    `;
+
+                    // Update previous dues information
+                    if (data.previous_dues.total_amount > 0) {
+                        previousDuesText.innerHTML = `
+                            <strong>Outstanding Amount: ${data.previous_dues.formatted_amount}</strong><br>
+                            <small>From ${data.previous_dues.bill_count} unpaid bill(s)</small>
+                        `;
+                        previousDuesInfo.style.display = 'block';
+
+                        // Update the checkbox label to show the amount
+                        const checkbox = document.getElementById('include_previous_dues');
+                        const label = checkbox.nextElementSibling;
+                        label.innerHTML = `
+                            <strong>Include Previous Outstanding Dues (${data.previous_dues.formatted_amount})</strong>
+                            <small class="text-muted d-block">Add any unpaid amounts from previous bills to this new bill</small>
+                        `;
+                        checkbox.disabled = false;
+                    } else {
+                        previousDuesText.innerHTML = 'No outstanding dues found for this student.';
+                        previousDuesInfo.style.display = 'block';
+
+                        // Reset checkbox label and disable it
+                        const checkbox = document.getElementById('include_previous_dues');
+                        const label = checkbox.nextElementSibling;
+                        label.innerHTML = `
+                            <strong>Include Previous Outstanding Dues</strong>
+                            <small class="text-muted d-block">No outstanding dues for this student</small>
+                        `;
+                        checkbox.disabled = true;
+                        checkbox.checked = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching student information:', error);
+                    studentInfo.innerHTML = '<p class="text-danger">Error loading student information</p>';
+                    previousDuesInfo.style.display = 'none';
+                });
         } else {
             studentInfo.innerHTML = '<p class="text-muted">Select a student to view information</p>';
+            previousDuesInfo.style.display = 'none';
+
+            // Reset checkbox
+            const checkbox = document.getElementById('include_previous_dues');
+            checkbox.disabled = false;
+            checkbox.checked = false;
         }
     });
 

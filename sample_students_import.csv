@@ -1,0 +1,9 @@
+first_name,last_name,date_of_birth,gender,phone,email,address,guardian_name,guardian_phone,guardian_relation,admission_date,nationality,status
+John,Doe,2000-01-01,Male,9800000001,john@test.com,123 Main St,John Sr,9800000002,Father,2024-01-01,Nepali,active
+Jane,Smith,2000-02-01,Female,9800000003,jane@test.com,456 Oak Ave,Mary Smith,9800000004,Mother,2024-01-01,Nepali,active
+Bob,Wilson,2000-03-01,Male,9800000005,bob@test.com,789 Pine Rd,Robert Wilson,9800000006,Father,2024-01-01,Nepali,active
+Alice,Brown,2000-04-01,Female,9800000007,alice@test.com,321 Elm St,Sarah Brown,9800000008,Mother,2024-01-01,Nepali,active
+John,Doe,2000-01-01,Male,9800000001,john@test.com,123 Main St,John Sr,9800000002,Father,2024-01-01,Nepali,active
+Charlie,Davis,2030-01-01,Invalid,9800000009,invalid-email,654 Maple Dr,Tom Davis,9800000010,Father,2024-01-01,Nepali,active
+,Missing,2000-06-01,Female,9800000011,missing@test.com,987 Cedar Ln,Lisa Missing,9800000012,Mother,2024-01-01,Nepali,active
+Mike,Johnson,2000-07-01,Male,9800000013,mike@test.com,147 Birch Way,David Johnson,9800000014,Father,2024-01-01,Nepali,active

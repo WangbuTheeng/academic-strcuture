@@ -349,55 +349,53 @@
 </div>
 
 <!-- Fee Details -->
-<div class="document-items">
-    <h3 style="color: #2c3e50; font-size: 14px; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 3px;">
-        Fee Details
-    </h3>
-    <div style="border: 1px solid #bdc3c7; border-radius: 5px; overflow: hidden; margin-bottom: 15px;">
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+    <thead>
+        <tr style="background: #f8f9fa;">
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 10px;">Fee Description</th>
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 10px;">Category</th>
+            <th style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 10px;">Amount</th>
+        </tr>
+    </thead>
+    <tbody>
         @foreach($receipt->payment->bill->billItems as $item)
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #ecf0f1; background: {{ $loop->even ? '#f8f9fa' : '#fff' }};">
-            <div>
-                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 2px; font-size: 12px;">{{ $item->description }}</div>
-                <span style="background: #3498db; color: white; padding: 1px 6px; border-radius: 8px; font-size: 9px;">
-                    {{ ucfirst($item->fee_category ?? 'General') }}
-                </span>
-            </div>
-            <div style="font-weight: 700; color: #27ae60; font-size: 12px;">
-                NRs. {{ number_format($item->final_amount, 2) }}
-            </div>
-        </div>
+        <tr>
+            <td style="padding: 6px; border: 1px solid #ddd; font-size: 9px;">{{ $item->description }}</td>
+            <td style="padding: 6px; border: 1px solid #ddd; font-size: 9px;">{{ ucfirst($item->fee_category ?? 'General') }}</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-size: 9px;">NRs. {{ number_format($item->final_amount, 2) }}</td>
+        </tr>
         @endforeach
-    </div>
+    </tbody>
+</table>
 
-    <!-- Payment Summary -->
-    <h3 style="color: #2c3e50; font-size: 14px; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 3px;">
-        Payment Summary
-    </h3>
-    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; padding: 12px; border: 1px solid #dee2e6;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 4px 0;">
-            <span style="color: #6c757d; font-weight: 500; font-size: 11px;">Total Bill Amount:</span>
-            <strong style="color: #495057; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->total_amount, 2) }}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 4px 6px; background: rgba(52, 152, 219, 0.1); border-radius: 3px;">
-            <span style="color: #3498db; font-weight: 500; font-size: 11px;">Total Paid So Far:</span>
-            <strong style="color: #3498db; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->paid_amount, 2) }}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 4px 6px; background: rgba(39, 174, 96, 0.1); border-radius: 3px;">
-            <span style="color: #27ae60; font-weight: 500; font-size: 11px;">This Payment:</span>
-            <strong style="color: #27ae60; font-size: 12px;">NRs. {{ number_format($receipt->amount, 2) }}</strong>
-        </div>
+<!-- Payment Summary -->
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+    <tbody>
+        <tr style="background: #f8f9fa;">
+            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 9px;">Bill Total Amount</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 9px;">NRs. {{ number_format($receipt->payment->bill->total_amount, 2) }}</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 9px;">Total Amount Paid So Far</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 9px;">NRs. {{ number_format($receipt->payment->bill->paid_amount, 2) }}</td>
+        </tr>
+        <tr style="background: #f8f9fa;">
+            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 9px;">Amount Paid (This Receipt)</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 9px;">NRs. {{ number_format($receipt->amount, 2) }}</td>
+        </tr>
         @if($receipt->payment->bill->balance_amount > 0)
-        <div style="display: flex; justify-content: space-between; padding: 4px 6px; background: rgba(241, 196, 15, 0.1); border-radius: 3px;">
-            <span style="color: #f1c40f; font-weight: 500; font-size: 11px;">Remaining Balance:</span>
-            <strong style="color: #f39c12; font-size: 12px;">NRs. {{ number_format($receipt->payment->bill->balance_amount, 2) }}</strong>
-        </div>
+        <tr style="background: #f8f9fa;">
+            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 9px;">Remaining Balance</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 9px;">NRs. {{ number_format($receipt->payment->bill->balance_amount, 2) }}</td>
+        </tr>
         @else
-        <div style="display: flex; justify-content: space-between; padding: 4px 6px; background: rgba(39, 174, 96, 0.1); border-radius: 3px;">
-            <span style="color: #27ae60; font-weight: 500; font-size: 11px;">Status:</span>
-            <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 600;">FULLY PAID</span>
-        </div>
+        <tr style="background: #f8f9fa;">
+            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 9px;">Bill Status</td>
+            <td style="padding: 6px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 9px;">FULLY PAID</td>
+        </tr>
         @endif
-    </div>
+    </tbody>
+</table>
 </div>
 
 @if($pendingBills->count() > 0)

@@ -364,7 +364,11 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
         Route::post('student-bills/bulk/process', [\App\Http\Controllers\Admin\StudentBillController::class, 'processBulkGenerate'])->name('process-bulk-generate');
         Route::post('student-bills/bulk/preview-students', [\App\Http\Controllers\Admin\StudentBillController::class, 'previewStudents'])->name('preview-students');
         Route::match(['GET', 'POST'], 'student-bills/bulk/print', [\App\Http\Controllers\Admin\StudentBillController::class, 'printBulkBills'])->name('print-bulk');
+        Route::post('student-bills/bulk/diagnose', [\App\Http\Controllers\Admin\BulkGenerationDiagnosticController::class, 'diagnose'])->name('bulk-diagnose');
     });
+
+    // API routes for student bill information
+    Route::get('students/{student}/bill-info', [\App\Http\Controllers\Admin\StudentBillController::class, 'getStudentBillInfo'])->name('students.bill-info');
 
     // Enhanced payments route aliases
     Route::name('enhanced-payments.')->group(function () {

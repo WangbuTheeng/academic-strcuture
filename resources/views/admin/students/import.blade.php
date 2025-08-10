@@ -15,7 +15,7 @@
                 </ol>
             </nav>
             <h1 class="h3 mb-0 text-gray-800">Import Students</h1>
-            <p class="text-muted">Import student data from Excel file</p>
+            <p class="text-muted">Import student data from Excel file - existing students are automatically skipped</p>
         </div>
         <div>
             <a href="{{ route('admin.students.index') }}" class="btn btn-secondary">
@@ -32,11 +32,12 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-8">
-                    <h5>Before importing, please:</h5>
+                    <h5>Easy Import Workflow:</h5>
                     <ol>
-                        <li>Download the template file to see the required format</li>
-                        <li>Fill in your student data following the exact column headers</li>
-                        <li>Ensure all required fields are filled</li>
+                        <li><strong>Download the template</strong> to see the required format</li>
+                        <li><strong>Create your master Excel file</strong> with all student data</li>
+                        <li><strong>Add new students</strong> to the same file whenever needed</li>
+                        <li><strong>Import the entire file</strong> - existing students will be automatically skipped</li>
                         <li>Save your file as CSV format (recommended) or Excel (.xlsx)</li>
                         <li>Maximum file size: 10MB</li>
                     </ol>
@@ -66,11 +67,14 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-info mt-3">
-                        <h6><i class="fas fa-info-circle"></i> Important Notes:</h6>
+                    <div class="alert alert-success mt-3">
+                        <h6><i class="fas fa-check-circle"></i> Easy Import Process:</h6>
                         <ul class="mb-0">
+                            <li><strong>Use one master Excel file</strong> - Keep adding new students to the same file over time</li>
+                            <li><strong>Existing students are automatically skipped</strong> - No need to worry about duplicates</li>
+                            <li><strong>Only new students will be imported</strong> - Safe to re-import the same file</li>
                             <li>Date format must be YYYY-MM-DD (e.g., 2010-01-15)</li>
-                            <li>Email addresses must be unique within your school</li>
+                            <li>Email addresses and phone numbers must be unique within your school</li>
                             <li>Empty rows will be skipped automatically</li>
                             <li>If there are errors, successful rows will still be imported</li>
                             <li>You can import up to 1000 students at once</li>
@@ -80,13 +84,13 @@
                 <div class="col-md-4 text-center">
                     <div class="border rounded p-3 bg-light">
                         <i class="fas fa-download fa-3x text-success mb-3"></i>
-                        <h5>Download Template</h5>
-                        <p class="text-muted">Get the CSV template with sample data</p>
+                        <h5>Download Master Template</h5>
+                        <p class="text-muted">Get the CSV template to create your master student file</p>
                         <a href="{{ route('admin.students.download-template') }}" class="btn btn-success">
-                            <i class="fas fa-download"></i> Download CSV Template
+                            <i class="fas fa-download"></i> Download Master Template
                         </a>
                         <small class="d-block mt-2 text-info">
-                            <i class="fas fa-info-circle"></i> CSV format is recommended for best compatibility
+                            <i class="fas fa-info-circle"></i> Use this as your master file - keep adding new students to it
                         </small>
                     </div>
                 </div>

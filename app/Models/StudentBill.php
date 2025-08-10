@@ -277,45 +277,56 @@ class StudentBill extends Model
     }
 
     /**
-     * Generate unique bill number with proper locking to prevent duplicates.
-     * Now school-specific to avoid conflicts between schools.
+     * Generate unique bill number - simplified and more reliable approach
      */
     public static function generateBillNumber($schoolId = null)
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($schoolId) {
-            $year = date('Y');
+        // Use current user's school if not provided
+        if (!$schoolId && auth()->check()) {
+            $schoolId = auth()->user()->school_id;
+        }
 
-            // Use current user's school if not provided
-            if (!$schoolId && auth()->check()) {
-                $schoolId = auth()->user()->school_id;
+        $year = date('Y');
+        $maxAttempts = 100;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            // Start from a higher number to avoid conflicts
+            $baseNumber = 1000 + $attempt;
+
+            // Get the current max number
+            $maxBill = self::where('bill_number', 'like', "BILL-{$year}-%")
+                          ->where('school_id', $schoolId)
+                          ->orderByRaw('CAST(SUBSTRING(bill_number, 11) AS UNSIGNED) DESC')
+                          ->first();
+
+            if ($maxBill && preg_match('/BILL-\d{4}-(\d+)/', $maxBill->bill_number, $matches)) {
+                $maxNumber = (int)$matches[1];
+                $baseNumber = max($baseNumber, $maxNumber + $attempt);
             }
 
-            // Get all bills for current year and school, extract numbers
-            $query = self::where('bill_number', 'like', "BILL-{$year}-%");
+            $billNumber = 'BILL-' . $year . '-' . str_pad($baseNumber, 6, '0', STR_PAD_LEFT);
 
-            if ($schoolId) {
-                $query->where('school_id', $schoolId);
+            // Check if this number is available
+            $exists = self::where('bill_number', $billNumber)
+                         ->where('school_id', $schoolId)
+                         ->exists();
+
+            if (!$exists) {
+                return $billNumber;
             }
 
-            $existingBills = $query->pluck('bill_number')->toArray();
-
-            $maxNumber = 0;
-
-            foreach ($existingBills as $billNumber) {
-                // Handle both 3-digit and 6-digit formats
-                if (preg_match('/BILL-\d{4}-(\d+)/', $billNumber, $matches)) {
-                    $number = (int)$matches[1];
-                    if ($number > $maxNumber) {
-                        $maxNumber = $number;
-                    }
-                }
+            // Small delay to avoid rapid-fire conflicts
+            if ($attempt > 1) {
+                usleep(1000 * $attempt); // Progressive delay
             }
+        }
 
-            $nextNumber = $maxNumber + 1;
+        // Final fallback with timestamp
+        $timestamp = time();
+        $fallback = 'BILL-' . $year . '-' . str_pad($timestamp % 1000000, 6, '0', STR_PAD_LEFT);
 
-            // Use 6-digit format for consistency
-            return 'BILL-' . $year . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-        });
+        \Log::warning("Using fallback bill number: {$fallback}");
+        return $fallback;
     }
 
     /**
@@ -327,22 +338,7 @@ class StudentBill extends Model
 
         static::creating(function ($bill) {
             if (empty($bill->bill_number)) {
-                // Generate unique bill number with retry logic
-                $maxRetries = 5;
-                $retryCount = 0;
-
-                do {
-                    $bill->bill_number = self::generateBillNumber($bill->school_id);
-                    // Check uniqueness within the same school
-                    $exists = self::where('bill_number', $bill->bill_number)
-                                ->where('school_id', $bill->school_id)
-                                ->exists();
-                    $retryCount++;
-                } while ($exists && $retryCount < $maxRetries);
-
-                if ($exists) {
-                    throw new \Exception('Unable to generate unique bill number after ' . $maxRetries . ' attempts');
-                }
+                $bill->bill_number = self::generateBillNumber($bill->school_id);
             }
         });
     }

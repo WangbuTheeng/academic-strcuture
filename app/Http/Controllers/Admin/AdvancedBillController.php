@@ -301,17 +301,39 @@ class AdvancedBillController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        // Add fee items
+        // Add previous dues if requested
         $totalAmount = 0;
+        if ($request->boolean('include_previous_dues', false)) {
+            $billService = app(\App\Services\BillService::class);
+            $previousDues = $billService->getPreviousDuesAmount($student->id);
+
+            if ($previousDues > 0) {
+                BillItem::create([
+                    'school_id' => auth()->user()->school_id,
+                    'bill_id' => $bill->id,
+                    'fee_category' => 'Previous Dues',
+                    'description' => 'Outstanding balance from previous bills',
+                    'unit_amount' => $previousDues,
+                    'quantity' => 1,
+                    'total_amount' => $previousDues,
+                    'final_amount' => $previousDues,
+                ]);
+
+                $totalAmount += $previousDues;
+            }
+        }
+
+        // Add fee items
         foreach ($feeStructures as $feeStructure) {
             $amount = $feeStructure->amount;
-            
+
             // Apply discounts if configured
             if ($request->filled('discount_config')) {
                 $amount = $this->applyDiscount($amount, $request->discount_config);
             }
 
             BillItem::create([
+                'school_id' => auth()->user()->school_id,
                 'bill_id' => $bill->id,
                 'fee_structure_id' => $feeStructure->id,
                 'fee_category' => $feeStructure->fee_category,

@@ -68,6 +68,8 @@ class SubjectController extends Controller
      */
     public function store(Request $request)
     {
+        $schoolId = auth()->user()->school_id;
+
         $validated = $request->validate([
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:100',
@@ -75,8 +77,7 @@ class SubjectController extends Controller
                 'required',
                 'string',
                 'max:10',
-                Rule::unique('subjects')->where(function ($query) {
-                    $schoolId = session('school_context') ?? auth()->user()->school_id;
+                Rule::unique('subjects')->where(function ($query) use ($schoolId) {
                     return $query->where('school_id', $schoolId);
                 })
             ],
@@ -89,6 +90,9 @@ class SubjectController extends Controller
             'has_internal' => 'boolean',
             'is_active' => 'boolean',
         ]);
+
+        // Add school_id to the validated data
+        $validated['school_id'] = $schoolId;
 
         Subject::create($validated);
 
@@ -122,6 +126,8 @@ class SubjectController extends Controller
      */
     public function update(Request $request, Subject $subject)
     {
+        $schoolId = auth()->user()->school_id;
+
         $validated = $request->validate([
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:100',
@@ -129,8 +135,7 @@ class SubjectController extends Controller
                 'required',
                 'string',
                 'max:10',
-                Rule::unique('subjects')->where(function ($query) {
-                    $schoolId = session('school_context') ?? auth()->user()->school_id;
+                Rule::unique('subjects')->where(function ($query) use ($schoolId) {
                     return $query->where('school_id', $schoolId);
                 })->ignore($subject->id)
             ],

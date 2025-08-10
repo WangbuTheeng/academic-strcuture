@@ -20,32 +20,26 @@
         }
 
         .bill-container {
-            width: 210mm;
-            height: 148mm;
+            max-width: 800px;
             margin: 0 auto;
             padding: 0;
             background: white;
-            position: relative;
-            border: 2px solid #e0e0e0;
+            border: 1px solid #e0e0e0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transform: scale(0.9);
-            transform-origin: top center;
         }
 
         .bill-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
-            padding: 15px 20px;
+            padding: 20px;
+            text-align: center;
             position: relative;
-            display: flex;
-            align-items: center;
-            gap: 15px;
         }
 
         .logo-section {
-            width: 70px;
-            height: 70px;
-            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
         }
 
         .logo-placeholder {
@@ -62,132 +56,81 @@
         }
 
         .institute-info {
-            flex: 1;
+            text-align: center;
         }
 
         .institute-name {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .institute-details {
-            font-size: 12px;
+            font-size: 14px;
             opacity: 0.9;
             line-height: 1.4;
         }
 
         .bill-title {
             text-align: center;
-            background: #e74c3c;
+            background: rgba(139, 92, 246, 0.8);
             color: white;
             margin: 0;
-            padding: 8px;
-            font-size: 16px;
+            padding: 12px;
+            font-size: 18px;
             font-weight: bold;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
 
         .bill-content {
-            padding: 15px 20px;
+            padding: 20px;
             background: white;
         }
 
-        .info-cards {
+        .info-section {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .info-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            border-left: 3px solid #3498db;
-        }
-
-        .info-card-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 5px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px 0;
         }
 
         .info-item {
-            margin-bottom: 8px;
+            text-align: left;
         }
 
         .info-label {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
+            font-size: 14px;
+            color: #333;
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 5px;
         }
 
         .info-value {
-            font-size: 13px;
-            color: #333;
-            font-weight: 600;
-            background: white;
-            padding: 5px 8px;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .status-badge {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-pending { background: #f39c12; color: white; }
-        .status-paid { background: #27ae60; color: white; }
-        .status-partial { background: #3498db; color: white; }
-        .status-overdue { background: #e74c3c; color: white; }
-
-        .payment-details {
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            margin: 0 20px;
-        }
-
-        .payment-header {
-            background: #e74c3c;
-            color: white;
-            padding: 10px 15px;
             font-size: 14px;
-            font-weight: bold;
-            margin: 0;
+            color: #333;
         }
 
         .payment-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px;
-            width: calc(100% - 30px);
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
         }
 
         .payment-table th {
-            padding: 8px;
-            font-size: 12px;
-            color: #666;
+            padding: 12px;
+            font-size: 14px;
+            color: #333;
             text-align: left;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
             font-weight: bold;
             background: #f8f9fa;
         }
 
         .payment-table td {
-            padding: 8px 0;
-            font-size: 13px;
+            padding: 12px;
+            font-size: 14px;
             color: #333;
             border-bottom: 1px solid #e0e0e0;
         }
@@ -197,44 +140,25 @@
             font-weight: bold;
         }
 
-        .total-row {
-            background: #27ae60;
-            color: white;
+        .summary-row {
+            background: #f8f9fa;
             font-weight: bold;
         }
 
-        .total-row td {
-            padding: 10px 8px;
-            font-size: 15px;
-            border-radius: 4px;
-            border: none;
-        }
-
-        .balance-row {
-            background: #f39c12;
-            color: white;
-            font-weight: bold;
-        }
-
-        .balance-row td {
-            padding: 8px;
-            font-size: 13px;
-            border-radius: 4px;
-            border: none;
+        .summary-row td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
         .bill-footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #2c3e50;
-            color: white;
-            padding: 10px 20px;
+            margin-top: 40px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 11px;
+            align-items: flex-end;
+            font-size: 12px;
+            color: #666;
         }
 
         .signature-section {
@@ -242,10 +166,10 @@
         }
 
         .signature-line {
-            width: 120px;
-            border-bottom: 1px solid rgba(255,255,255,0.5);
+            width: 150px;
+            border-bottom: 1px solid #333;
             margin-bottom: 5px;
-            padding-bottom: 15px;
+            padding-bottom: 20px;
         }
 
         .footer-info {
@@ -286,138 +210,102 @@
                 <div class="institute-name">{{ $instituteSettings->institution_name ?? 'Test Academy' }}</div>
                 <div class="institute-details">
                     {{ $instituteSettings->institution_address ?? 'test address' }}<br>
-                    Phone: {{ $instituteSettings->institution_phone ?? '45454' }}<br>
-                    Email: {{ $instituteSettings->institution_email ?? 'test12@gmail.com' }}
+                    Phone: {{ $instituteSettings->institution_phone ?? '45454' }} | Email: {{ $instituteSettings->institution_email ?? 'test12@gmail.com' }}
                 </div>
             </div>
         </div>
 
         <!-- Bill Title -->
         <div class="bill-title">
-            STUDENT FEE BILL
+            PAYMENT RECEIPT
         </div>
 
         <!-- Bill Content -->
         <div class="bill-content">
-            <!-- Info Cards -->
-            <div class="info-cards">
-                <!-- Left Card - Student Information -->
-                <div class="info-card">
-                    <div class="info-card-title">Student Information</div>
-
-                    <div class="info-item">
-                        <div class="info-label">Student Name:</div>
-                        <div class="info-value">{{ $bill->student->full_name ?? 'N/A' }}</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Admission No:</div>
-                        <div class="info-value">{{ $bill->student->admission_number ?? 'N/A' }}</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Class:</div>
-                        <div class="info-value">{{ $bill->student->currentEnrollment->class->name ?? 'N/A' }}</div>
-                    </div>
+            <!-- Info Section -->
+            <div class="info-section">
+                <div class="info-item">
+                    <div class="info-label">Receipt No:</div>
+                    <div class="info-value">{{ $bill->bill_number }}</div>
                 </div>
 
-                <!-- Right Card - Bill Information -->
-                <div class="info-card">
-                    <div class="info-card-title">Bill Information</div>
+                <div class="info-item">
+                    <div class="info-label">Student:</div>
+                    <div class="info-value">{{ $bill->student->full_name ?? 'N/A' }}</div>
+                </div>
 
-                    <div class="info-item">
-                        <div class="info-label">Bill Number:</div>
-                        <div class="info-value">{{ $bill->bill_number }}</div>
-                    </div>
+                <div class="info-item">
+                    <div class="info-label">Date:</div>
+                    <div class="info-value">{{ $bill->bill_date->format('M d, Y') }}</div>
+                </div>
 
-                    <div class="info-item">
-                        <div class="info-label">Bill Date:</div>
-                        <div class="info-value">{{ $bill->bill_date->format('M d, Y') }}</div>
-                    </div>
+                <div class="info-item">
+                    <div class="info-label">Admission No:</div>
+                    <div class="info-value">{{ $bill->student->admission_number ?? 'N/A' }}</div>
+                </div>
 
-                    <div class="info-item">
-                        <div class="info-label">Due Date:</div>
-                        <div class="info-value">{{ $bill->due_date->format('M d, Y') }}</div>
-                    </div>
+                <div class="info-item">
+                    <div class="info-label">Payment Method:</div>
+                    <div class="info-value">Cash</div>
+                </div>
 
-                    <div class="info-item">
-                        <div class="info-label">Status:</div>
-                        <div class="info-value">
-                            <span class="status-badge status-{{ $bill->status }}">
-                                {{ ucfirst($bill->status) }}
-                            </span>
-                        </div>
-                    </div>
+                <div class="info-item">
+                    <div class="info-label">Class:</div>
+                    <div class="info-value">{{ $bill->student->currentEnrollment->class->name ?? 'N/A' }}</div>
                 </div>
             </div>
 
-            <!-- Payment Details -->
-            <div class="payment-details">
-                <div class="payment-header">
-                    Bill Details
-                </div>
+            <!-- Payment Details Table -->
+            <table class="payment-table">
+                <thead>
+                    <tr>
+                        <th>Fee Description</th>
+                        <th>Category</th>
+                        <th class="amount">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($bill->billItems as $item)
+                    <tr>
+                        <td>{{ $item->description }}</td>
+                        <td>{{ ucfirst($item->fee_category ?? 'General') }}</td>
+                        <td class="amount">NRs. {{ number_format($item->final_amount, 2) }}</td>
+                    </tr>
+                    @endforeach
 
-                <table class="payment-table">
-                    <thead>
-                        <tr>
-                            <th>Fee Description</th>
-                            <th>Category</th>
-                            <th class="amount">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($bill->billItems as $item)
-                        <tr>
-                            <td>{{ $item->description }}</td>
-                            <td>{{ ucfirst($item->fee_category ?? 'General') }}</td>
-                            <td class="amount">NRs. {{ number_format($item->final_amount, 2) }}</td>
-                        </tr>
-                        @endforeach
+                    <!-- Summary Rows -->
+                    <tr class="summary-row">
+                        <td colspan="2">Bill Total Amount</td>
+                        <td class="amount">NRs. {{ number_format($bill->total_amount, 2) }}</td>
+                    </tr>
 
-                        <!-- Subtotal -->
-                        <tr style="background: #f8f9fa;">
-                            <td colspan="2" style="font-weight: bold; color: #333; padding: 10px 8px;">
-                                Total Bill Amount
-                            </td>
-                            <td class="amount" style="font-weight: bold; color: #333; padding: 10px 8px;">
-                                NRs. {{ number_format($bill->total_amount, 2) }}
-                            </td>
-                        </tr>
+                    <tr class="summary-row">
+                        <td colspan="2">Total Amount Paid So Far</td>
+                        <td class="amount">NRs. {{ number_format($bill->paid_amount, 2) }}</td>
+                    </tr>
 
-                        @if($bill->paid_amount > 0)
-                        <!-- Amount Paid -->
-                        <tr class="total-row">
-                            <td colspan="2">Amount Paid</td>
-                            <td class="amount">NRs. {{ number_format($bill->paid_amount, 2) }}</td>
-                        </tr>
-                        @endif
+                    <tr class="summary-row">
+                        <td colspan="2">Amount Paid (This Receipt)</td>
+                        <td class="amount">NRs. 1,000.00</td>
+                    </tr>
 
-                        @if($bill->balance_amount > 0)
-                        <!-- Remaining Balance -->
-                        <tr class="balance-row">
-                            <td colspan="2">Balance Due</td>
-                            <td class="amount">NRs. {{ number_format($bill->balance_amount, 2) }}</td>
-                        </tr>
-                        @else
-                        <tr class="total-row">
-                            <td colspan="2">Bill Status</td>
-                            <td class="amount">FULLY PAID</td>
-                        </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
+                    <tr class="summary-row">
+                        <td colspan="2">Remaining Balance</td>
+                        <td class="amount">NRs. {{ number_format($bill->total_amount - $bill->paid_amount, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- Footer -->
         <div class="bill-footer">
             <div class="signature-section">
-                <div class="signature-line"></div>
-                <div>Authorized Signature</div>
+                <div>Signature: ___________________</div>
             </div>
             <div class="footer-info">
+                <div>Received by: Test Administrator</div>
                 <div>Date: {{ $bill->bill_date->format('M d, Y') }}</div>
-                <div style="font-size: 10px; margin-top: 5px;">This is a computer generated bill</div>
+                <div style="font-size: 10px; margin-top: 5px; color: #999;">This is a computer generated receipt</div>
             </div>
         </div>
     </div>

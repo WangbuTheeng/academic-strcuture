@@ -145,11 +145,78 @@ use Illuminate\Support\Facades\Storage;
         </div>
     @endif
 
+    @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ session('warning') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i>
             {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <!-- Import Errors Details -->
+    @if(session('import_errors') && count(session('import_errors')) > 0)
+        <div class="card border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Import Issues Details
+                    @if(session('import_summary'))
+                        @php $summary = session('import_summary'); @endphp
+                        <small class="ms-2">
+                            ({{ $summary['success_count'] }} successful,
+                            {{ $summary['error_count'] }} errors,
+                            {{ $summary['duplicate_count'] }} duplicates)
+                        </small>
+                    @endif
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>Row</th>
+                                <th>Student Data</th>
+                                <th>Issues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(session('import_errors') as $error)
+                                <tr>
+                                    <td class="fw-bold">{{ $error['row'] }}</td>
+                                    <td>
+                                        @if(isset($error['data']))
+                                            <small class="text-muted">{{ $error['data'] }}</small>
+                                        @else
+                                            <small class="text-muted">Unable to parse data</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @foreach($error['errors'] as $issue)
+                                            <div class="badge bg-danger me-1 mb-1">{{ $issue }}</div>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Please fix these issues in your Excel file and re-import the failed rows.
+                        Successfully imported students are already saved.
+                    </small>
+                </div>
+            </div>
         </div>
     @endif
 

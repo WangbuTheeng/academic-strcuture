@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Program;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClassController extends Controller
 {
@@ -82,13 +83,25 @@ class ClassController extends Controller
      */
     public function store(Request $request)
     {
+        $schoolId = auth()->user()->school_id;
+
         $validated = $request->validate([
             'level_id' => 'required|exists:levels,id',
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:10|unique:classes,code',
+            'code' => [
+                'required',
+                'string',
+                'max:10',
+                Rule::unique('classes')->where(function ($query) use ($schoolId) {
+                    return $query->where('school_id', $schoolId);
+                })
+            ],
             'is_active' => 'boolean',
         ]);
+
+        // Add school_id to the validated data
+        $validated['school_id'] = $schoolId;
 
         ClassModel::create($validated);
 
@@ -126,11 +139,20 @@ class ClassController extends Controller
      */
     public function update(Request $request, ClassModel $class)
     {
+        $schoolId = auth()->user()->school_id;
+
         $validated = $request->validate([
             'level_id' => 'required|exists:levels,id',
             'department_id' => 'required|exists:departments,id',
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:10|unique:classes,code,' . $class->id,
+            'code' => [
+                'required',
+                'string',
+                'max:10',
+                Rule::unique('classes')->ignore($class->id)->where(function ($query) use ($schoolId) {
+                    return $query->where('school_id', $schoolId);
+                })
+            ],
             'is_active' => 'boolean',
         ]);
 

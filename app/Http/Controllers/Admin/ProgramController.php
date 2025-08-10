@@ -80,7 +80,7 @@ class ProgramController extends Controller
      */
     public function store(Request $request)
     {
-        $schoolId = session('school_context') ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $validated = $request->validate([
             'department_id' => 'required|exists:departments,id',
@@ -140,7 +140,7 @@ class ProgramController extends Controller
      */
     public function update(Request $request, Program $program)
     {
-        $schoolId = session('school_context') ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $validated = $request->validate([
             'department_id' => 'required|exists:departments,id',

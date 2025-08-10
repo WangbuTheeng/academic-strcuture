@@ -175,8 +175,11 @@ class StudentBillController extends Controller
             // Get custom fees
             $customFees = $request->custom_fees ?? [];
 
+            // Check if previous dues should be included
+            $includePreviousDues = $request->boolean('include_previous_dues', false);
+
             // Create bill using service
-            $bill = $this->billService->createBill($billData, $feeStructures, $customFees);
+            $bill = $this->billService->createBill($billData, $feeStructures, $customFees, $includePreviousDues);
 
             return redirect()->route('admin.student-bills.index')
                             ->with('success', 'Student bill created successfully.');
@@ -234,6 +237,39 @@ class StudentBillController extends Controller
             'bill' => $bill,
             'instituteSettings' => $instituteSettings
         ]);
+    }
+
+    /**
+     * Get student bill information for AJAX requests
+     */
+    public function getStudentBillInfo($studentId)
+    {
+        try {
+            $student = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
+                ->where('school_id', auth()->user()->school_id)
+                ->findOrFail($studentId);
+
+            // Get previous dues information
+            $previousDues = $this->billService->getPreviousDuesDetails($studentId);
+
+            return response()->json([
+                'success' => true,
+                'student' => [
+                    'id' => $student->id,
+                    'full_name' => $student->full_name,
+                    'admission_number' => $student->admission_number,
+                    'current_class' => $student->currentEnrollment?->class?->name,
+                    'current_program' => $student->currentEnrollment?->program?->name,
+                ],
+                'previous_dues' => $previousDues
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching student information: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -412,49 +448,91 @@ class StudentBillController extends Controller
             'level_id' => 'nullable|exists:levels,id',
             'program_id' => 'nullable|exists:programs,id',
             'class_id' => 'nullable|exists:classes,id',
-            'fee_structures' => 'required|array|min:1',
+            'fee_structures' => 'nullable|array',
             'fee_structures.*' => 'exists:fee_structures,id',
+            'fee_amounts' => 'nullable|array',
+            'fee_amounts.*' => 'numeric|min:0',
+            'custom_fees' => 'nullable|array',
+            'custom_fees.*.description' => 'required|string|max:255',
+            'custom_fees.*.category' => 'required|string|in:tuition,examination,library,transport,hostel,other',
+            'custom_fees.*.amount' => 'required|numeric|min:0',
             'bill_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:bill_date',
             'bill_title' => 'nullable|string|max:255',
+            'include_previous_dues' => 'nullable|boolean',
         ]);
+
+        // Ensure at least one fee type is selected
+        if (empty($request->fee_structures) && empty($request->custom_fees)) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['fee_structures' => 'Please select at least one fee structure or add custom fees.']);
+        }
 
         $generatedCount = 0;
         $generatedBillIds = [];
         $errors = [];
 
         try {
-            DB::transaction(function () use ($request, &$generatedCount, &$generatedBillIds, &$errors) {
             // Get students based on filters (only from current school)
             $studentsQuery = Student::active()
                 ->where('school_id', auth()->user()->school_id)
                 ->whereHas('enrollments', function ($q) use ($request) {
                     $q->where('academic_year_id', $request->academic_year_id);
-                    
+
                     if ($request->filled('level_id')) {
                         $q->whereHas('program', function ($pq) use ($request) {
                             $pq->where('level_id', $request->level_id);
                         });
                     }
-                    
+
                     if ($request->filled('program_id')) {
                         $q->where('program_id', $request->program_id);
                     }
-                    
+
                     if ($request->filled('class_id')) {
                         $q->where('class_id', $request->class_id);
                     }
                 });
 
             $students = $studentsQuery->with(['currentEnrollment'])->get();
-            // Only get fee structures from current school
-            $feeStructures = FeeStructure::whereIn('id', $request->fee_structures)
-                                        ->where('school_id', auth()->user()->school_id)
-                                        ->get();
 
+            // Initialize BillService
+            $billService = new \App\Services\BillService();
+            // Prepare fee structures data
+            $feeStructureIds = [];
+            if (!empty($request->fee_structures)) {
+                foreach ($request->fee_structures as $feeStructureId) {
+                    // Use custom amount if provided, otherwise use original amount
+                    $customAmount = isset($request->fee_amounts[$feeStructureId])
+                        ? $request->fee_amounts[$feeStructureId]
+                        : null;
+
+                    $feeStructureIds[] = [
+                        'id' => $feeStructureId,
+                        'custom_amount' => $customAmount
+                    ];
+                }
+            }
+
+            // Prepare custom fees data
+            $customFees = [];
+            if (!empty($request->custom_fees)) {
+                foreach ($request->custom_fees as $customFee) {
+                    if (!empty($customFee['description']) && !empty($customFee['amount'])) {
+                        $customFees[] = [
+                            'name' => $customFee['description'],
+                            'amount' => $customFee['amount'],
+                            'category' => ucfirst($customFee['category'])
+                        ];
+                    }
+                }
+            }
+
+            // Process each student individually to avoid bill number conflicts
             foreach ($students as $student) {
                 $enrollment = $student->currentEnrollment;
-                
+
                 // Check if bill already exists for this period
                 $existingBill = StudentBill::where('student_id', $student->id)
                     ->where('academic_year_id', $request->academic_year_id)
@@ -465,51 +543,58 @@ class StudentBillController extends Controller
                     continue; // Skip if bill already exists
                 }
 
-                // Create bill
-                $bill = StudentBill::create([
-                    'student_id' => $student->id,
-                    'academic_year_id' => $request->academic_year_id,
-                    'class_id' => $enrollment?->class_id,
-                    'program_id' => $enrollment?->program_id,
-                    'bill_title' => $request->bill_title ?: 'Academic Fee Bill - ' . Carbon::parse($request->bill_date)->format('M Y'),
-                    'bill_date' => $request->bill_date,
-                    'due_date' => $request->due_date,
-                    'created_by' => Auth::id(),
-                ]);
+                try {
+                    // Use individual transaction for each bill to prevent conflicts
+                    DB::transaction(function () use ($student, $enrollment, $request, $billService, $feeStructureIds, $customFees, &$generatedBillIds, &$generatedCount) {
+                        // Prepare bill data
+                        $billData = [
+                            'student_id' => $student->id,
+                            'academic_year_id' => $request->academic_year_id,
+                            'class_id' => $enrollment?->class_id,
+                            'program_id' => $enrollment?->program_id,
+                            'bill_title' => $request->bill_title ?: 'Academic Fee Bill - ' . Carbon::parse($request->bill_date)->format('M Y'),
+                            'bill_date' => $request->bill_date,
+                            'due_date' => $request->due_date,
+                            'status' => 'pending',
+                            'created_by' => Auth::id(),
+                            'school_id' => auth()->user()->school_id,
+                        ];
 
-                // Add fee items
-                $totalAmount = 0;
-                foreach ($feeStructures as $feeStructure) {
-                    BillItem::create([
-                        'bill_id' => $bill->id,
-                        'fee_structure_id' => $feeStructure->id,
-                        'fee_category' => $feeStructure->fee_category,
-                        'description' => $feeStructure->fee_name,
-                        'unit_amount' => $feeStructure->amount,
-                        'quantity' => 1,
-                        'total_amount' => $feeStructure->amount,
-                        'final_amount' => $feeStructure->amount,
-                    ]);
+                        // Create bill using BillService
+                        $bill = $billService->createBill(
+                            $billData,
+                            $feeStructureIds,
+                            $customFees,
+                            $request->boolean('include_previous_dues', false)
+                        );
 
-                    $totalAmount += $feeStructure->amount;
+                        $generatedBillIds[] = $bill->id;
+                        $generatedCount++;
+                    });
+
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to create bill for student {$student->full_name}: " . $e->getMessage();
+                    \Log::error("Bulk bill generation error for student {$student->id}: " . $e->getMessage());
                 }
-
-                // Update bill total
-                $bill->update([
-                    'total_amount' => $totalAmount,
-                    'balance_amount' => $totalAmount,
-                ]);
-
-                $generatedBillIds[] = $bill->id;
-                $generatedCount++;
             }
-            });
 
         } catch (\Exception $e) {
             \Log::error('Bulk bill generation failed: ' . $e->getMessage());
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['error' => 'Failed to generate bills: ' . $e->getMessage()]);
+        }
+
+        // Show errors if any occurred during individual bill creation
+        if (!empty($errors)) {
+            $errorMessage = "Generated {$generatedCount} bills successfully, but encountered " . count($errors) . " errors:\n";
+            $errorMessage .= implode("\n", array_slice($errors, 0, 5)); // Show first 5 errors
+            if (count($errors) > 5) {
+                $errorMessage .= "\n... and " . (count($errors) - 5) . " more errors.";
+            }
+
+            return redirect()->route('admin.student-bills.index')
+                ->with('warning', $errorMessage);
         }
 
         // Check if auto-print is requested

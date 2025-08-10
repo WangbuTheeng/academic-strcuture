@@ -427,7 +427,7 @@
     <div class="sidebar" id="sidebar">
         <!-- Brand -->
         <div class="sidebar-brand">
-            <h4><i class="fas fa-graduation-cap me-2"></i>AMS</h4>
+            <h4 style="color: white;"><i class="fas fa-graduation-cap me-2"></i>AMS</h4>
             <small>Academic Management System</small>
         </div>
 

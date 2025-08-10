@@ -11,6 +11,7 @@ class BillItem extends Model
     use HasFactory, BelongsToSchool;
 
     protected $fillable = [
+        'school_id',
         'bill_id',
         'fee_structure_id',
         'fee_category',
