@@ -47,16 +47,18 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
         }
 
         .logo-section img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            border-radius: 8px;
-            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            border: 3px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.1);
+            padding: 2px;
         }
 
         .logo-placeholder {
@@ -67,10 +69,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            border-radius: 8px;
-            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            border: 3px solid rgba(255,255,255,0.4);
         }
 
         .institution-details {
@@ -290,32 +292,92 @@
                 </tr>
             </table>
 
-            <!-- Payment Details Table -->
-            <table class="payment-table">
+            <!-- Fee Details Section -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                 <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th style="text-align: right;">Amount</th>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Fee Description</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Category</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size: 12px;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @foreach($receipt->payment->bill->billItems as $item)
                     <tr>
-                        <td>Payment for Bill #{{ $receipt->payment->bill->bill_number }}</td>
-                        <td class="amount">NRs. {{ number_format($receipt->amount, 2) }}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">{{ $item->description }}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">{{ ucfirst($item->fee_category ?? 'General') }}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size: 11px;">NRs. {{ number_format($item->final_amount, 2) }}</td>
                     </tr>
-                    <tr class="total-row">
-                        <td><strong>Total Paid Amount</strong></td>
-                        <td class="amount"><strong>NRs. {{ number_format($receipt->amount, 2) }}</strong></td>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <!-- Payment Summary Section -->
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tbody>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Bill Total Amount</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->total_amount, 2) }}</td>
                     </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Total Amount Paid So Far</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->paid_amount, 2) }}</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Amount Paid (This Receipt)</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->amount, 2) }}</td>
+                    </tr>
+                    @php
+                        $remainingBalance = $receipt->payment->bill->balance_amount;
+                    @endphp
+                    @if($remainingBalance > 0)
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Remaining Balance</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($remainingBalance, 2) }}</td>
+                    </tr>
+                    @else
+                    <tr style="background: #f8f9fa;">
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Bill Status</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">FULLY PAID</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+
+        @if($pendingBills->count() > 0)
+        <!-- Other Pending Bills -->
+        <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">
+                OTHER PENDING BILLS
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 4px; text-align: left; border: 1px solid #ddd;">Bill #</th>
+                        <th style="padding: 4px; text-align: center; border: 1px solid #ddd;">Due Date</th>
+                        <th style="padding: 4px; text-align: right; border: 1px solid #ddd;">Amount Due</th>
+                        <th style="padding: 4px; text-align: center; border: 1px solid #ddd;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($pendingBills as $bill)
                     <tr>
-                        <td>Bill Status</td>
-                        <td class="amount">
-                            <span class="status-badge">{{ strtoupper($receipt->payment->bill->status) }}</span>
-                        </td>
+                        <td style="padding: 4px; border: 1px solid #ddd;">{{ $bill->bill_number }}</td>
+                        <td style="padding: 4px; text-align: center; border: 1px solid #ddd;">{{ $bill->due_date->format('M d, Y') }}</td>
+                        <td style="padding: 4px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($bill->balance_amount, 2) }}</td>
+                        <td style="padding: 4px; text-align: center; border: 1px solid #ddd;">{{ strtoupper($bill->status) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr style="background: #f8f9fa; font-weight: bold;">
+                        <td colspan="2" style="padding: 6px; border: 1px solid #ddd;">Total Outstanding</td>
+                        <td style="padding: 6px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($pendingBills->sum('balance_amount'), 2) }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;"></td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        @endif
 
         <!-- Footer -->
         <div class="receipt-footer">

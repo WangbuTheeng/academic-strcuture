@@ -140,7 +140,9 @@ class PaymentController extends Controller
                 ->with('error', 'Payment amount cannot exceed the bill balance.');
         }
 
-        DB::transaction(function () use ($request) {
+        $receipt = null;
+
+        DB::transaction(function () use ($request, &$receipt) {
             // Create payment
             $payment = Payment::create([
                 'student_id' => $request->student_id,
@@ -162,7 +164,7 @@ class PaymentController extends Controller
             ]);
 
             // Create receipt
-            PaymentReceipt::create([
+            $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'student_id' => $payment->student_id,
                 'receipt_date' => $payment->payment_date,
@@ -176,8 +178,8 @@ class PaymentController extends Controller
             $payment->bill->updateAmounts();
         });
 
-        return redirect()->route('admin.payments.index')
-            ->with('success', 'Payment recorded successfully.');
+        return redirect()->route('admin.fees.receipts.show', $receipt)
+            ->with('success', 'Payment recorded successfully! Receipt is ready for printing.');
     }
 
     /**
@@ -283,7 +285,9 @@ class PaymentController extends Controller
                 ->with('error', 'Payment is already verified.');
         }
 
-        DB::transaction(function () use ($payment) {
+        $receipt = null;
+
+        DB::transaction(function () use ($payment, &$receipt) {
             $payment->update([
                 'status' => 'verified',
                 'is_verified' => true,
@@ -293,7 +297,7 @@ class PaymentController extends Controller
 
             // Create receipt if not exists
             if (!$payment->receipts()->exists()) {
-                PaymentReceipt::create([
+                $receipt = PaymentReceipt::create([
                     'payment_id' => $payment->id,
                     'student_id' => $payment->student_id,
                     'receipt_date' => $payment->payment_date,
@@ -302,14 +306,16 @@ class PaymentController extends Controller
                     'issued_by' => Auth::id(),
                     'school_id' => Auth::user()->school_id,
                 ]);
+            } else {
+                $receipt = $payment->receipts()->first();
             }
 
             // Update bill amounts
             $payment->bill->updateAmounts();
         });
 
-        return redirect()->back()
-            ->with('success', 'Payment verified successfully.');
+        return redirect()->route('admin.fees.receipts.show', $receipt)
+            ->with('success', 'Payment verified successfully! Receipt is ready for printing.');
     }
 
     /**
@@ -448,7 +454,9 @@ class PaymentController extends Controller
                 ->with('error', 'Payment amount cannot exceed the bill balance.');
         }
 
-        DB::transaction(function () use ($request, $bill) {
+        $receipt = null;
+
+        DB::transaction(function () use ($request, $bill, &$receipt) {
             // Create payment
             $payment = Payment::create([
                 'student_id' => $request->student_id,
@@ -466,7 +474,7 @@ class PaymentController extends Controller
             ]);
 
             // Create receipt
-            PaymentReceipt::create([
+            $receipt = PaymentReceipt::create([
                 'payment_id' => $payment->id,
                 'student_id' => $payment->student_id,
                 'receipt_date' => $payment->payment_date,
@@ -480,7 +488,7 @@ class PaymentController extends Controller
             $payment->bill->updateAmounts();
         });
 
-        return redirect()->route('admin.payments.index')
-            ->with('success', 'Quick payment recorded successfully.');
+        return redirect()->route('admin.fees.receipts.show', $receipt)
+            ->with('success', 'Quick payment recorded successfully! Receipt is ready for printing.');
     }
 }

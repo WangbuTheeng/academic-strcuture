@@ -33,6 +33,15 @@
                         <i class="fas fa-info-circle me-2"></i>
                         This is a preview of how receipts will appear when printed. The template is designed for half A4 page size.
                     </div>
+
+                    @if(!isset($instituteSettings->institution_logo) || !$instituteSettings->institution_logo)
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>No logo uploaded:</strong> To display your institution's logo in receipts, please upload a logo in
+                        <a href="{{ route('admin.institute-settings.index') }}" class="alert-link">Institute Settings</a>.
+                        Currently showing institution initials as placeholder.
+                    </div>
+                    @endif
                     
                     <!-- Receipt Preview -->
                     <div id="receipt-preview" style="transform: scale(0.75); transform-origin: top left; margin-bottom: -120px;">
@@ -42,12 +51,16 @@
                             <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 15px 20px; position: relative;">
                                 <div style="display: flex; align-items: center; gap: 15px;">
                                     <!-- Logo Section -->
-                                    <div style="width: 60px; height: 60px; flex-shrink: 0;">
+                                    <div style="width: 70px; height: 70px; flex-shrink: 0;">
                                         @if(isset($instituteSettings->institution_logo) && $instituteSettings->institution_logo)
                                             <img src="{{ asset('storage/' . $instituteSettings->institution_logo) }}" alt="Institution Logo"
-                                                 style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
+                                                 style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px; border: 3px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); padding: 2px;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.2); color: white; display: none; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; border-radius: 10px; border: 3px solid rgba(255,255,255,0.4);">
+                                                {{ substr($instituteSettings->institution_name ?? 'AMS', 0, 3) }}
+                                            </div>
                                         @else
-                                            <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
+                                            <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.2); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; border-radius: 10px; border: 3px solid rgba(255,255,255,0.4);">
                                                 {{ substr($instituteSettings->institution_name ?? 'AMS', 0, 3) }}
                                             </div>
                                         @endif
@@ -130,28 +143,120 @@
 
                                     <div style="padding: 15px;">
                                         <table style="width: 100%; border-collapse: collapse;">
+                                            <thead>
+                                                <tr style="background: #f8f9fa;">
+                                                    <th style="padding: 8px; font-size: 12px; color: #666; text-align: left; border-bottom: 2px solid #e0e0e0; font-weight: bold;">Fee Description</th>
+                                                    <th style="padding: 8px; font-size: 12px; color: #666; text-align: right; border-bottom: 2px solid #e0e0e0; font-weight: bold;">Amount</th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
+                                                @foreach($sampleReceipt->payment->bill->billItems as $item)
                                                 <tr>
                                                     <td style="padding: 8px 0; font-size: 13px; color: #333; border-bottom: 1px solid #e0e0e0; font-weight: 500;">
-                                                        Payment for Bill {{ $sampleReceipt->payment->bill->bill_number }}
+                                                        {{ $item->description }}
                                                     </td>
-                                                    <td style="padding: 8px 0; text-align: right; font-size: 14px; font-weight: bold; color: #27ae60; border-bottom: 1px solid #e0e0e0;">
-                                                        NRs. {{ number_format($sampleReceipt->amount, 2) }}
+                                                    <td style="padding: 8px 0; text-align: right; font-size: 13px; color: #333; border-bottom: 1px solid #e0e0e0;">
+                                                        NRs. {{ number_format($item->final_amount, 2) }}
                                                     </td>
                                                 </tr>
+                                                @endforeach
+
+                                                <!-- Subtotal -->
+                                                <tr style="background: #f8f9fa;">
+                                                    <td style="padding: 10px 8px; font-size: 14px; font-weight: bold; color: #333; border-bottom: 1px solid #ddd;">
+                                                        Bill Total Amount
+                                                    </td>
+                                                    <td style="padding: 10px 8px; text-align: right; font-size: 14px; font-weight: bold; color: #333; border-bottom: 1px solid #ddd;">
+                                                        NRs. {{ number_format(collect($sampleReceipt->payment->bill->billItems)->sum('final_amount'), 2) }}
+                                                    </td>
+                                                </tr>
+
+                                                <!-- Total Amount Paid So Far -->
+                                                <tr style="background: #e3f2fd;">
+                                                    <td style="padding: 10px 8px; font-size: 14px; font-weight: bold; color: #333; border-bottom: 1px solid #ddd;">
+                                                        Total Amount Paid So Far
+                                                    </td>
+                                                    <td style="padding: 10px 8px; text-align: right; font-size: 14px; font-weight: bold; color: #333; border-bottom: 1px solid #ddd;">
+                                                        NRs. {{ number_format($sampleReceipt->amount + 1500, 2) }}
+                                                    </td>
+                                                </tr>
+
+                                                <!-- Amount Paid This Receipt -->
                                                 <tr>
                                                     <td style="background: #27ae60; color: white; padding: 10px 8px; font-size: 15px; font-weight: bold; border-radius: 4px; border: none;">
-                                                        Total Paid Amount
+                                                        Amount Paid (This Receipt)
                                                     </td>
                                                     <td style="background: #27ae60; color: white; padding: 10px 8px; text-align: right; font-size: 16px; font-weight: bold; border-radius: 4px; border: none;">
                                                         NRs. {{ number_format($sampleReceipt->amount, 2) }}
                                                     </td>
                                                 </tr>
+
+                                                @php
+                                                    $billTotal = collect($sampleReceipt->payment->bill->billItems)->sum('final_amount');
+                                                    $remainingBalance = $billTotal - $sampleReceipt->amount;
+                                                @endphp
+                                                @if($remainingBalance > 0)
+                                                <tr>
+                                                    <td style="background: #f39c12; color: white; padding: 8px; font-size: 13px; font-weight: bold; border-radius: 4px; border: none;">
+                                                        Remaining Balance
+                                                    </td>
+                                                    <td style="background: #f39c12; color: white; padding: 8px; text-align: right; font-size: 14px; font-weight: bold; border-radius: 4px; border: none;">
+                                                        NRs. {{ number_format($remainingBalance, 2) }}
+                                                    </td>
+                                                </tr>
+                                                @else
+                                                <tr>
+                                                    <td style="background: #27ae60; color: white; padding: 8px; font-size: 13px; font-weight: bold; border-radius: 4px; border: none;">
+                                                        Bill Status
+                                                    </td>
+                                                    <td style="background: #27ae60; color: white; padding: 8px; text-align: right; font-size: 14px; font-weight: bold; border-radius: 4px; border: none;">
+                                                        FULLY PAID
+                                                    </td>
+                                                </tr>
+                                                @endif
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
+
+                            @if($samplePendingBills->count() > 0)
+                            <!-- Other Pending Bills -->
+                            <div style="margin: 15px 20px; padding: 12px; border: 2px solid #f39c12; border-radius: 6px; background: #fef9e7;">
+                                <div style="font-size: 12px; font-weight: bold; color: #e67e22; margin-bottom: 8px; text-align: center;">
+                                    ⚠️ OTHER PENDING BILLS
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                                    <thead>
+                                        <tr style="background: #f39c12; color: white;">
+                                            <th style="padding: 4px; text-align: left; border: 1px solid #e67e22;">Bill Number</th>
+                                            <th style="padding: 4px; text-align: center; border: 1px solid #e67e22;">Due Date</th>
+                                            <th style="padding: 4px; text-align: right; border: 1px solid #e67e22;">Amount Due</th>
+                                            <th style="padding: 4px; text-align: center; border: 1px solid #e67e22;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($samplePendingBills as $bill)
+                                        <tr>
+                                            <td style="padding: 4px; border: 1px solid #e67e22; font-size: 9px;">{{ $bill->bill_number }}</td>
+                                            <td style="padding: 4px; text-align: center; border: 1px solid #e67e22; font-size: 9px;">{{ $bill->due_date->format('M d, Y') }}</td>
+                                            <td style="padding: 4px; text-align: right; border: 1px solid #e67e22; font-size: 9px;">NRs. {{ number_format($bill->balance_amount, 2) }}</td>
+                                            <td style="padding: 4px; text-align: center; border: 1px solid #e67e22;">
+                                                <span style="background: {{ $bill->is_overdue ? '#e74c3c' : '#f39c12' }}; color: white; padding: 1px 4px; border-radius: 2px; font-size: 8px;">
+                                                    {{ strtoupper($bill->status) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                        <tr style="background: #f8f9fa; font-weight: bold;">
+                                            <td colspan="2" style="padding: 6px; border: 1px solid #e67e22; font-size: 9px;">Total Outstanding</td>
+                                            <td style="padding: 6px; text-align: right; border: 1px solid #e67e22; font-size: 9px;">NRs. {{ number_format($samplePendingBills->sum('balance_amount'), 2) }}</td>
+                                            <td style="padding: 6px; border: 1px solid #e67e22;"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
 
                             <!-- Footer -->
                             <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #2c3e50; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">

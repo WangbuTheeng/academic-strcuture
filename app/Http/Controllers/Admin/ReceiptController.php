@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentReceipt;
 use App\Models\Payment;
+use App\Models\StudentBill;
 use App\Models\InstituteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -87,7 +88,16 @@ class ReceiptController extends Controller
             'canceller'
         ]);
 
-        return view('admin.receipts.show', compact('receipt'));
+        // Get other pending bills for the student
+        $pendingBills = StudentBill::where('student_id', $receipt->payment->student_id)
+            ->where('school_id', auth()->user()->school_id)
+            ->whereIn('status', ['pending', 'partial', 'overdue'])
+            ->where('id', '!=', $receipt->payment->bill_id) // Exclude current bill
+            ->with(['billItems'])
+            ->orderBy('due_date')
+            ->get();
+
+        return view('admin.receipts.show', compact('receipt', 'pendingBills'));
     }
 
     /**
@@ -101,12 +111,21 @@ class ReceiptController extends Controller
             'issuer'
         ]);
 
+        // Get other pending bills for the student
+        $pendingBills = StudentBill::where('student_id', $receipt->payment->student_id)
+            ->where('school_id', auth()->user()->school_id)
+            ->whereIn('status', ['pending', 'partial', 'overdue'])
+            ->where('id', '!=', $receipt->payment->bill_id) // Exclude current bill
+            ->with(['billItems'])
+            ->orderBy('due_date')
+            ->get();
+
         $instituteSettings = InstituteSettings::first();
 
-        $pdf = Pdf::loadView('admin.receipts.pdf', compact('receipt', 'instituteSettings'));
-        
+        $pdf = Pdf::loadView('admin.receipts.pdf', compact('receipt', 'instituteSettings', 'pendingBills'));
+
         $filename = 'receipt-' . $receipt->receipt_number . '.pdf';
-        
+
         return $pdf->download($filename);
     }
 
@@ -121,9 +140,18 @@ class ReceiptController extends Controller
             'issuer'
         ]);
 
+        // Get other pending bills for the student
+        $pendingBills = StudentBill::where('student_id', $receipt->payment->student_id)
+            ->where('school_id', auth()->user()->school_id)
+            ->whereIn('status', ['pending', 'partial', 'overdue'])
+            ->where('id', '!=', $receipt->payment->bill_id) // Exclude current bill
+            ->with(['billItems'])
+            ->orderBy('due_date')
+            ->get();
+
         $instituteSettings = InstituteSettings::first();
 
-        return view('admin.receipts.print', compact('receipt', 'instituteSettings'));
+        return view('admin.receipts.print', compact('receipt', 'instituteSettings', 'pendingBills'));
     }
 
     /**
@@ -259,7 +287,29 @@ class ReceiptController extends Controller
             ]
         ];
 
-        return view('admin.receipts.template', compact('instituteSettings', 'sampleReceipt'));
+        // Sample pending bills for template preview
+        $samplePendingBills = collect([
+            (object) [
+                'bill_number' => 'BILL-2025-002',
+                'bill_title' => 'Examination Fee Bill - Feb 2025',
+                'due_date' => now()->addDays(15),
+                'balance_amount' => 2500.00,
+                'status' => 'pending',
+                'is_overdue' => false,
+                'status_badge_class' => 'badge-warning',
+            ],
+            (object) [
+                'bill_number' => 'BILL-2025-003',
+                'bill_title' => 'Activity Fee Bill - Mar 2025',
+                'due_date' => now()->subDays(5),
+                'balance_amount' => 1800.00,
+                'status' => 'overdue',
+                'is_overdue' => true,
+                'status_badge_class' => 'badge-danger',
+            ],
+        ]);
+
+        return view('admin.receipts.template', compact('instituteSettings', 'sampleReceipt', 'samplePendingBills'));
     }
 
     /**

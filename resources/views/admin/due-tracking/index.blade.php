@@ -169,17 +169,17 @@
         <div class="card-header py-3">
             <ul class="nav nav-tabs card-header-tabs" id="dueTrackingTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">
+                    <button class="nav-link active" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab" style="color: #000 !important;">
                         <i class="fas fa-exclamation-triangle me-2"></i>Overdue Bills ({{ $overdueCount }})
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="all-dues-tab" data-bs-toggle="tab" data-bs-target="#all-dues" type="button" role="tab">
+                    <button class="nav-link" id="all-dues-tab" data-bs-toggle="tab" data-bs-target="#all-dues" type="button" role="tab" style="color: #000 !important;">
                         <i class="fas fa-users me-2"></i>All Students with Dues ({{ $studentsWithDues->count() }})
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="defaulters-tab" data-bs-toggle="tab" data-bs-target="#defaulters" type="button" role="tab">
+                    <button class="nav-link" id="defaulters-tab" data-bs-toggle="tab" data-bs-target="#defaulters" type="button" role="tab" style="color: #000 !important;">
                         <i class="fas fa-user-times me-2"></i>Top Defaulters
                     </button>
                 </li>
