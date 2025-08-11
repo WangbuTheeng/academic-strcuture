@@ -175,7 +175,13 @@ class FeeReportController extends Controller
             $query->where('status', $request->status);
         }
 
-        $outstandingBills = $query->orderBy('due_date', 'asc')->paginate(20);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 20);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 20;
+        }
+
+        $outstandingBills = $query->orderBy('due_date', 'asc')->paginate($perPage);
 
         $totalOutstanding = $query->sum('balance_amount');
         $overdueAmount = StudentBill::whereIn('status', ['pending', 'partial', 'overdue'])
@@ -229,7 +235,13 @@ class FeeReportController extends Controller
             });
         }
 
-        $students = $query->orderBy('first_name', 'asc')->paginate(20);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 20);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 20;
+        }
+
+        $students = $query->orderBy('first_name', 'asc')->paginate($perPage);
 
         // Get filter options
         $academicYears = AcademicYear::orderBy('name', 'asc')->get();

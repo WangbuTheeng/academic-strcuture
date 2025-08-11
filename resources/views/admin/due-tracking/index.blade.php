@@ -289,12 +289,11 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <!-- Pagination -->
-                        @if($overdueBills->hasPages())
-                            <div class="d-flex justify-content-end">
-                                {{ $overdueBills->appends(request()->query())->links() }}
-                            </div>
-                        @endif
+                        <!-- Enhanced Pagination -->
+                        <x-enhanced-pagination
+                            :paginator="$overdueBills"
+                            :route="route('admin.due-tracking.index')"
+                        />
                     </div>
                 </div>
             @else

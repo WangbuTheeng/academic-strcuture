@@ -96,6 +96,7 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
     // Student management routes
+    Route::get('students/search', [\App\Http\Controllers\Admin\StudentController::class, 'search'])->name('students.search');
     Route::get('students/export', [\App\Http\Controllers\Admin\StudentController::class, 'export'])->name('students.export');
     Route::get('students/import', [\App\Http\Controllers\Admin\StudentController::class, 'showImport'])->name('students.show-import');
     Route::post('students/import', [\App\Http\Controllers\Admin\StudentController::class, 'import'])->name('students.import');
@@ -369,6 +370,7 @@ Route::middleware(['auth', 'school-context', 'role:admin'])->prefix('admin')->na
 
     // API routes for student bill information
     Route::get('students/{student}/bill-info', [\App\Http\Controllers\Admin\StudentBillController::class, 'getStudentBillInfo'])->name('students.bill-info');
+    Route::get('students/{student}/financial-history', [\App\Http\Controllers\Admin\StudentBillController::class, 'studentFinancialHistory'])->name('students.financial-history');
 
     // Enhanced payments route aliases
     Route::name('enhanced-payments.')->group(function () {

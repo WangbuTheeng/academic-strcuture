@@ -134,16 +134,11 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                @if($receipts->hasPages())
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="text-muted">
-                            Showing {{ $receipts->firstItem() }} to {{ $receipts->lastItem() }} 
-                            of {{ $receipts->total() }} results
-                        </div>
-                        {{ $receipts->appends(request()->query())->links() }}
-                    </div>
-                @endif
+                <!-- Enhanced Pagination -->
+                <x-enhanced-pagination
+                    :paginator="$receipts"
+                    :route="route('admin.fees.receipts.index')"
+                />
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-receipt fa-3x text-gray-300 mb-3"></i>

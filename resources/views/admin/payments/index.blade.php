@@ -12,10 +12,13 @@
             </h1>
             <p class="text-muted mb-0">Track and manage student payments</p>
         </div>
-        <div>
+        <div class="btn-group">
             <a href="{{ route('admin.fees.payments.quick-entry') }}" class="btn btn-primary">
                 <i class="fas fa-bolt me-2"></i>Quick Payment
             </a>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#studentHistoryModal">
+                <i class="fas fa-user-graduate me-2"></i>Student History
+            </button>
         </div>
     </div>
 
@@ -247,11 +250,13 @@
                 <!-- Pagination -->
                 @if($payments->hasPages())
                     <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="text-muted">
-                            Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }} 
+                        <div class="text-muted small">
+                            Showing {{ $payments->firstItem() }} to {{ $payments->lastItem() }}
                             of {{ $payments->total() }} results
                         </div>
-                        {{ $payments->appends(request()->query())->links() }}
+                        <div class="pagination-wrapper">
+                            {{ $payments->appends(request()->query())->links('pagination::bootstrap-4') }}
+                        </div>
                     </div>
                 @endif
             @else
@@ -267,7 +272,77 @@
         </div>
     </div>
 </div>
+
+<!-- Student History Modal -->
+<div class="modal fade" id="studentHistoryModal" tabindex="-1" aria-labelledby="studentHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentHistoryModalLabel">
+                    <i class="fas fa-user-graduate me-2"></i>View Student Financial History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studentHistoryForm">
+                    <div class="mb-3">
+                        <label for="studentSearch" class="form-label">Search Student</label>
+                        <input type="text" class="form-control" id="studentSearch"
+                               placeholder="Type student name or admission number...">
+                        <div class="form-text">Start typing to search for students</div>
+                    </div>
+
+                    <div id="studentResults" class="list-group" style="display: none; max-height: 300px; overflow-y: auto;">
+                        <!-- Student search results will appear here -->
+                    </div>
+
+                    <div id="noResults" class="text-center text-muted py-3" style="display: none;">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>No students found matching your search</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('styles')
+<style>
+/* Fix pagination button sizes */
+.pagination-wrapper .pagination {
+    margin-bottom: 0;
+}
+
+.pagination-wrapper .page-link {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.pagination-wrapper .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.pagination-wrapper .page-link:hover {
+    background-color: #f8f9fc;
+    border-color: #dee2e6;
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>

@@ -277,6 +277,10 @@
                                                class="btn btn-sm btn-outline-info" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            <a href="{{ route('admin.students.financial-history', $bill->student_id) }}"
+                                               class="btn btn-sm btn-outline-secondary" title="Student History">
+                                                <i class="fas fa-user-graduate"></i>
+                                            </a>
                                             @if(!$bill->is_locked && $bill->status !== 'paid' && $bill->paid_amount == 0)
                                                 <a href="{{ route('admin.fees.bills.edit', $bill) }}"
                                                    class="btn btn-sm btn-outline-primary" title="Edit">
@@ -324,14 +328,11 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-end align-items-center">
-                            <div class="text-muted me-3">
-                                Showing {{ $bills->firstItem() }} to {{ $bills->lastItem() }} 
-                                of {{ $bills->total() }} results
-                            </div>
-                            {{ $bills->links() }}
-                        </div>
+                        <!-- Enhanced Pagination -->
+                        <x-enhanced-pagination
+                            :paginator="$bills"
+                            :route="route('admin.fees.bills.index')"
+                        />
                     </div>
                 </div>
             @else

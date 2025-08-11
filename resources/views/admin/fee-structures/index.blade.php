@@ -277,14 +277,11 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div class="text-muted">
-                        Showing {{ $feeStructures->firstItem() }} to {{ $feeStructures->lastItem() }} 
-                        of {{ $feeStructures->total() }} results
-                    </div>
-                    {{ $feeStructures->links() }}
-                </div>
+                <!-- Enhanced Pagination -->
+                <x-enhanced-pagination
+                    :paginator="$feeStructures"
+                    :route="route('admin.fees.structures.index')"
+                />
             @else
                 <div class="text-center py-5">
                     <i class="fas fa-cogs fa-3x text-gray-300 mb-3"></i>

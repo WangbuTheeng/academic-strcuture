@@ -59,7 +59,13 @@ class ReceiptController extends Controller
             });
         }
 
-        $receipts = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 15);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
+        $receipts = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Get summary statistics
         $totalReceipts = PaymentReceipt::active()->count();

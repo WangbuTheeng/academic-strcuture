@@ -58,7 +58,13 @@ class DueTrackingController extends Controller
             $overdueBills->where('due_date', '<=', $cutoffDate);
         }
 
-        $overdueBills = $overdueBills->paginate(15);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 15);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
+        $overdueBills = $overdueBills->paginate($perPage);
 
         // Get summary statistics
         $totalOverdue = StudentBill::whereIn('status', ['pending', 'partial', 'overdue'])

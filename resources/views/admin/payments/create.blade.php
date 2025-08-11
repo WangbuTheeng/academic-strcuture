@@ -67,18 +67,13 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
+                                <!-- Hidden input for selected bill -->
+                                <input type="hidden" name="bill_id" id="bill_id" required>
                                 <div class="form-group">
-                                    <label for="bill_id">Bill <span class="text-danger">*</span></label>
-                                    <select name="bill_id" id="bill_id" class="form-control" required>
-                                        <option value="">Select Bill</option>
-                                        @if(isset($bills) && $bills->count() > 0)
-                                        @foreach($bills as $bill)
-                                        <option value="{{ $bill->id }}" {{ request('bill_id') == $bill->id ? 'selected' : '' }}>
-                                            {{ $bill->bill_number }} - Rs. {{ number_format($bill->balance_amount, 2) }} (Due: {{ $bill->due_date->format('M d, Y') }})
-                                        </option>
-                                        @endforeach
-                                        @endif
-                                    </select>
+                                    <label>Selected Bill <span class="text-danger">*</span></label>
+                                    <div id="selectedBillDisplay" class="form-control" style="background: #f8f9fa; min-height: 38px; display: flex; align-items: center;">
+                                        <span class="text-muted">Select a student first to see available bills</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -87,9 +82,20 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="amount">Amount <span class="text-danger">*</span></label>
-                                    <input type="number" name="amount" id="amount" class="form-control" 
+                                    <input type="number" name="amount" id="amount" class="form-control"
                                            step="0.01" min="0.01" required>
                                     <small class="form-text text-muted">Maximum: Rs. <span id="maxAmount">0.00</span></small>
+
+                                    <!-- Quick Amount Buttons -->
+                                    <div id="quickAmountButtons" class="mt-2" style="display: none;">
+                                        <small class="text-muted d-block mb-1">Quick amounts:</small>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickAmount(25)">25%</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickAmount(50)">50%</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="setQuickAmount(75)">75%</button>
+                                            <button type="button" class="btn btn-outline-success" onclick="setQuickAmount(100)">100%</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -130,41 +136,90 @@
                 </div>
             </div>
 
-            <!-- Bill Summary -->
+            <!-- Available Bills -->
             <div class="col-lg-4">
                 <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Available Bills</h6>
+                        <span id="billCount" class="badge badge-secondary">0</span>
+                    </div>
+                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                        <!-- Loading State -->
+                        <div id="billsLoading" style="display: none;" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+                            <p class="text-muted">Loading bills...</p>
+                        </div>
+
+                        <!-- No Student Selected -->
+                        <div id="noBillsMessage" class="text-center text-muted py-4">
+                            <i class="fas fa-user-graduate fa-3x mb-3"></i>
+                            <p>Select a student to view available bills</p>
+                        </div>
+
+                        <!-- No Bills Found -->
+                        <div id="noBillsFound" style="display: none;" class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                            <p>No pending bills found for this student</p>
+                            <small>All bills are fully paid!</small>
+                        </div>
+
+                        <!-- Bills Container -->
+                        <div id="billsContainer">
+                            <!-- Bill cards will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Summary -->
+                <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Bill Summary</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Payment Summary</h6>
                     </div>
                     <div class="card-body">
-                        <div id="billSummary" style="display: none;">
-                            <div class="text-center">
-                                <h4 class="text-primary">Rs. <span id="billTotal">0.00</span></h4>
-                                <p class="text-muted">Total Amount</p>
-                                
-                                <h4 class="text-success">Rs. <span id="billPaid">0.00</span></h4>
-                                <p class="text-muted">Paid Amount</p>
-                                
-                                <h4 class="text-danger">Rs. <span id="billBalance">0.00</span></h4>
-                                <p class="text-muted">Balance Amount</p>
+                        <div id="paymentSummary" style="display: none;">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <h6 class="text-primary">Bill Total</h6>
+                                    <h5 id="summaryBillTotal">Rs. 0.00</h5>
+                                </div>
+                                <div class="col-4">
+                                    <h6 class="text-success">Paying Now</h6>
+                                    <h5 id="summaryPayingNow">Rs. 0.00</h5>
+                                </div>
+                                <div class="col-4">
+                                    <h6 class="text-warning">Remaining</h6>
+                                    <h5 id="summaryRemaining">Rs. 0.00</h5>
+                                </div>
                             </div>
+                            <hr>
+                            <div class="progress mb-2">
+                                <div id="paymentProgress" class="progress-bar bg-success" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted">Payment Progress: <span id="paymentPercentage">0%</span></small>
                         </div>
-                        
-                        <div id="noBillSelected" class="text-center text-muted">
-                            <i class="fas fa-file-invoice fa-3x mb-3"></i>
-                            <p>Select a student and bill to view summary</p>
+
+                        <div id="noPaymentSummary" class="text-center text-muted">
+                            <i class="fas fa-calculator fa-2x mb-3"></i>
+                            <p>Select a bill and enter amount to see payment summary</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="card shadow">
                     <div class="card-body">
-                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn" disabled>
                             <i class="fas fa-save me-2"></i>Record Payment
                         </button>
                         <a href="{{ route('admin.payments.index') }}" class="btn btn-secondary btn-block mt-2">
                             <i class="fas fa-times me-2"></i>Cancel
                         </a>
+
+                        <!-- Validation Messages -->
+                        <div id="validationMessages" class="mt-3" style="display: none;">
+                            <div class="alert alert-warning alert-sm">
+                                <ul id="validationList" class="mb-0 small"></ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -172,26 +227,248 @@
     </form>
 </div>
 
+<!-- Toast Notifications -->
+<div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<style>
+/* Bill Card Styles */
+.bill-card {
+    border: 2px solid #e3e6f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.bill-card:hover {
+    border-color: #4e73df;
+    box-shadow: 0 4px 8px rgba(78, 115, 223, 0.15);
+    transform: translateY(-2px);
+}
+
+.bill-card.selected {
+    border-color: #4e73df;
+    background: #f8f9ff;
+    box-shadow: 0 4px 12px rgba(78, 115, 223, 0.25);
+}
+
+.bill-card-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.bill-number {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.bill-status {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-partial {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-overdue {
+    background: #f8d7da;
+    color: #721c24;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.bill-title {
+    color: #495057;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.bill-amount {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e74c3c;
+    margin-bottom: 5px;
+}
+
+.bill-due-date {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.due-overdue {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.due-soon {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.bill-card-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.quick-action-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-pay-full {
+    background: #28a745;
+    color: white;
+}
+
+.btn-pay-partial {
+    background: #17a2b8;
+    color: white;
+}
+
+.quick-action-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* Enhanced form styling */
+#selectedBillDisplay {
+    transition: all 0.3s ease;
+}
+
+#selectedBillDisplay:has(.d-flex) {
+    background: #e8f5e8 !important;
+    border-color: #28a745;
+}
+
+/* Progress bar styling */
+.progress {
+    background-color: #f8f9fa;
+}
+
+/* Quick amount buttons */
+.btn-group-sm .btn {
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bill-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Enhanced hover effects */
+.bill-card:hover .quick-actions {
+    opacity: 1;
+}
+
+.quick-actions {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+/* Selected bill highlight */
+#selectedBillDisplay .d-flex {
+    padding: 8px 12px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+/* Toast notifications */
+.toast-notification {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-left: 4px solid #28a745;
+    animation: slideIn 0.3s ease-out;
+    max-width: 300px;
+}
+
+.toast-notification.error {
+    border-left-color: #dc3545;
+}
+
+.toast-notification.warning {
+    border-left-color: #ffc107;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const studentSelect = document.getElementById('student_id');
-    const billSelect = document.getElementById('bill_id');
+    const billIdInput = document.getElementById('bill_id');
     const amountInput = document.getElementById('amount');
+    const selectedBillDisplay = document.getElementById('selectedBillDisplay');
+    const billsContainer = document.getElementById('billsContainer');
+    const billCount = document.getElementById('billCount');
+
+    // UI Elements
+    const billsLoading = document.getElementById('billsLoading');
+    const noBillsMessage = document.getElementById('noBillsMessage');
+    const noBillsFound = document.getElementById('noBillsFound');
 
     // Setup CSRF token for fetch requests
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+    let selectedBill = null;
+    let availableBills = [];
+
     // Function to load bills for a student
     function loadStudentBills(studentId) {
         if (!studentId) {
-            billSelect.innerHTML = '<option value="">Select Bill</option>';
-            hideBillSummary();
+            showNoBillsMessage();
+            clearSelectedBill();
             return;
         }
 
         // Show loading state
-        billSelect.innerHTML = '<option value="">Loading bills...</option>';
-        billSelect.disabled = true;
+        showBillsLoading();
 
         fetch(`{{ route('admin.fees.student-bills-by-student') }}?student_id=${studentId}`, {
                 method: 'GET',
@@ -208,31 +485,138 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(bills => {
-                billSelect.innerHTML = '<option value="">Select Bill</option>';
-                billSelect.disabled = false;
+                availableBills = bills;
 
                 if (bills.length === 0) {
-                    billSelect.innerHTML = '<option value="">No pending bills found</option>';
-                    return;
+                    showNoBillsFound();
+                } else {
+                    displayBillCards(bills);
                 }
-
-                bills.forEach(bill => {
-                    const option = document.createElement('option');
-                    option.value = bill.id;
-                    option.textContent = `${bill.bill_number} - Rs. ${bill.balance_amount} (Due: ${bill.due_date})`;
-                    billSelect.appendChild(option);
-                });
             })
             .catch(error => {
                 console.error('Error loading bills:', error);
-                billSelect.innerHTML = '<option value="">Error loading bills</option>';
-                billSelect.disabled = false;
-
-                // Show user-friendly error message
-                alert('Error loading bills. Please refresh the page and try again.');
+                showError('Error loading bills. Please refresh the page and try again.');
             });
+    }
 
-        hideBillSummary();
+    // Function to display bill cards
+    function displayBillCards(bills) {
+        hideAllStates();
+        billsContainer.style.display = 'block';
+        billsContainer.innerHTML = '';
+        billCount.textContent = bills.length;
+
+        bills.forEach(bill => {
+            const billCard = createBillCard(bill);
+            billsContainer.appendChild(billCard);
+        });
+    }
+
+    // Function to create a bill card
+    function createBillCard(bill) {
+        const card = document.createElement('div');
+        card.className = 'bill-card';
+        card.dataset.billId = bill.id;
+
+        // Determine status and due date styling using enhanced data
+        const statusClass = getStatusClass(bill.status);
+        const dueDateClass = bill.is_overdue ? 'due-overdue' : (bill.days_until_due <= 7 ? 'due-soon' : '');
+        const dueDateText = formatDueDate(bill);
+
+        // Add progress bar if bill has payments
+        const progressBar = bill.payment_progress > 0 ?
+            `<div class="progress mb-2" style="height: 4px;">
+                <div class="progress-bar bg-success" style="width: ${bill.payment_progress}%"></div>
+            </div>` : '';
+
+        card.innerHTML = `
+            <div class="bill-card-header">
+                <div class="bill-number">${bill.bill_number}</div>
+                <span class="bill-status ${statusClass}">${getStatusText(bill.status)}</span>
+            </div>
+            <div class="bill-title">${bill.bill_title || 'Academic Fee Bill'}</div>
+            ${progressBar}
+            <div class="bill-amount">Rs. ${bill.balance_amount}</div>
+            <div class="bill-due-date ${dueDateClass}">Due: ${dueDateText}</div>
+            <div class="bill-card-footer">
+                <div>
+                    <small class="text-muted">Total: Rs. ${bill.total_amount}</small><br>
+                    <small class="text-muted">Paid: Rs. ${bill.paid_amount}</small>
+                    ${bill.payment_progress > 0 ? `<br><small class="text-success">${bill.payment_progress}% paid</small>` : ''}
+                </div>
+                <div class="quick-actions">
+                    <button type="button" class="quick-action-btn btn-pay-full" onclick="selectBillWithAmount('${bill.id}', '${bill.balance_amount}')">
+                        Pay Full
+                    </button>
+                    <button type="button" class="quick-action-btn btn-pay-partial" onclick="selectBillForPartial('${bill.id}')">
+                        Partial
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add click handler for card selection
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on quick action buttons
+            if (e.target.classList.contains('quick-action-btn')) {
+                return;
+            }
+            selectBill(bill);
+        });
+
+        return card;
+    }
+
+    // Function to select a bill
+    function selectBill(bill) {
+        selectedBill = bill;
+        billIdInput.value = bill.id;
+
+        // Update selected bill display
+        selectedBillDisplay.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <strong>${bill.bill_number}</strong><br>
+                    <small class="text-muted">Balance: Rs. ${bill.balance_amount}</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelectedBill()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+        // Update visual selection
+        document.querySelectorAll('.bill-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelector(`[data-bill-id="${bill.id}"]`).classList.add('selected');
+
+        // Set amount to bill balance by default
+        const balanceAmount = parseFloat(bill.balance_amount.replace(/,/g, ''));
+        amountInput.value = balanceAmount;
+        amountInput.max = balanceAmount;
+
+        // Update max amount display if element exists
+        const maxAmountElement = document.getElementById('maxAmount');
+        if (maxAmountElement) {
+            maxAmountElement.textContent = bill.balance_amount;
+        }
+
+        // Show quick amount buttons
+        const quickAmountButtons = document.getElementById('quickAmountButtons');
+        if (quickAmountButtons) {
+            quickAmountButtons.style.display = 'block';
+        }
+
+        // Store current bill balance for quick amount calculations
+        window.currentBillBalance = balanceAmount;
+        window.currentBillTotal = parseFloat(bill.total_amount.replace(/,/g, ''));
+
+        // Update payment summary
+        updatePaymentSummary();
+
+        // Show success toast
+        showToast(`Selected bill ${bill.bill_number} - Rs. ${bill.balance_amount} due`, 'success');
     }
 
     // Load bills when student changes
@@ -242,61 +626,161 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load bills on page load if student is pre-selected
     if (studentSelect.value) {
-        // Add a small delay to ensure everything is loaded
         setTimeout(() => {
             loadStudentBills(studentSelect.value);
         }, 100);
     }
-    
-    // Load bill details when bill changes
-    billSelect.addEventListener('change', function() {
-        const billId = this.value;
 
-        if (billId) {
-            fetch(`{{ url('admin/fees/bills') }}/${billId}/details`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(bill => {
-                    showBillSummary(bill);
-                    amountInput.max = bill.balance_amount;
-                    amountInput.value = bill.balance_amount;
-                })
-                .catch(error => {
-                    console.error('Error loading bill details:', error);
-                    hideBillSummary();
-                });
-        } else {
-            hideBillSummary();
+    // Add real-time validation listeners
+    amountInput.addEventListener('input', updatePaymentSummary);
+    document.getElementById('payment_method').addEventListener('change', validateForm);
+    document.getElementById('payment_date').addEventListener('change', validateForm);
+    studentSelect.addEventListener('change', validateForm);
+
+    // Utility functions
+    function getStatusClass(status) {
+        switch(status.toLowerCase()) {
+            case 'overdue': return 'status-overdue';
+            case 'partial': return 'status-partial';
+            default: return 'status-pending';
         }
-    });
-    
-    function showBillSummary(bill) {
-        document.getElementById('billTotal').textContent = parseFloat(bill.total_amount).toFixed(2);
-        document.getElementById('billPaid').textContent = parseFloat(bill.paid_amount).toFixed(2);
-        document.getElementById('billBalance').textContent = parseFloat(bill.balance_amount).toFixed(2);
-        document.getElementById('maxAmount').textContent = parseFloat(bill.balance_amount).toFixed(2);
-        
-        document.getElementById('billSummary').style.display = 'block';
-        document.getElementById('noBillSelected').style.display = 'none';
     }
-    
-    function hideBillSummary() {
-        document.getElementById('billSummary').style.display = 'none';
-        document.getElementById('noBillSelected').style.display = 'block';
-        amountInput.max = '';
+
+    function getStatusText(status) {
+        switch(status.toLowerCase()) {
+            case 'overdue': return 'OVERDUE';
+            case 'partial': return 'PARTIAL';
+            case 'pending': return 'PENDING';
+            default: return status.toUpperCase();
+        }
+    }
+
+    function getDueDateClass(dueDate) {
+        // Use the enhanced data if available
+        if (typeof dueDate === 'object' && dueDate.due_date_status) {
+            switch(dueDate.due_date_status) {
+                case 'overdue': return 'due-overdue';
+                case 'due_soon': return 'due-soon';
+                default: return '';
+            }
+        }
+
+        // Fallback to date calculation
+        const today = new Date();
+        const due = new Date(dueDate);
+        const diffTime = due - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return 'due-overdue';
+        if (diffDays <= 7) return 'due-soon';
+        return '';
+    }
+
+    function formatDueDate(dueDate) {
+        // Use enhanced data if available
+        if (typeof dueDate === 'object' && dueDate.due_date_formatted) {
+            const days = dueDate.days_until_due;
+            if (days < 0) {
+                return `${dueDate.due_date_formatted} (${Math.abs(days)} days overdue)`;
+            } else if (days === 0) {
+                return `${dueDate.due_date_formatted} (Due today)`;
+            } else if (days <= 7) {
+                return `${dueDate.due_date_formatted} (${days} days left)`;
+            }
+            return dueDate.due_date_formatted;
+        }
+
+        // Fallback to date calculation
+        const today = new Date();
+        const due = new Date(dueDate);
+        const diffTime = due - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        const formatted = due.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+
+        if (diffDays < 0) {
+            return `${formatted} (${Math.abs(diffDays)} days overdue)`;
+        } else if (diffDays === 0) {
+            return `${formatted} (Due today)`;
+        } else if (diffDays <= 7) {
+            return `${formatted} (${diffDays} days left)`;
+        }
+        return formatted;
+    }
+
+    // UI State functions
+    function showBillsLoading() {
+        hideAllStates();
+        billsLoading.style.display = 'block';
+    }
+
+    function showNoBillsMessage() {
+        hideAllStates();
+        noBillsMessage.style.display = 'block';
+        billCount.textContent = '0';
+    }
+
+    function showNoBillsFound() {
+        hideAllStates();
+        noBillsFound.style.display = 'block';
+        billCount.textContent = '0';
+    }
+
+    function hideAllStates() {
+        billsLoading.style.display = 'none';
+        noBillsMessage.style.display = 'none';
+        noBillsFound.style.display = 'none';
+        billsContainer.style.display = 'none';
+    }
+
+    function showError(message) {
+        hideAllStates();
+        billsContainer.innerHTML = `
+            <div class="text-center text-danger py-4">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                <p>${message}</p>
+            </div>
+        `;
+        billsContainer.style.display = 'block';
+    }
+
+    function clearSelectedBill() {
+        selectedBill = null;
+        billIdInput.value = '';
+        selectedBillDisplay.innerHTML = '<span class="text-muted">No bill selected</span>';
         amountInput.value = '';
-        document.getElementById('maxAmount').textContent = '0.00';
+        amountInput.max = '';
+
+        // Update max amount display if element exists
+        const maxAmountElement = document.getElementById('maxAmount');
+        if (maxAmountElement) {
+            maxAmountElement.textContent = '0.00';
+        }
+
+        // Hide quick amount buttons
+        const quickAmountButtons = document.getElementById('quickAmountButtons');
+        if (quickAmountButtons) {
+            quickAmountButtons.style.display = 'none';
+        }
+
+        // Clear current bill balance
+        window.currentBillBalance = 0;
+        window.currentBillTotal = 0;
+
+        // Hide payment summary
+        hidePaymentSummary();
+
+        // Remove visual selection
+        document.querySelectorAll('.bill-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Update validation
+        validateForm();
     }
 
     // Form submission handling
@@ -321,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!billId) {
             e.preventDefault();
-            alert('Please select a bill.');
+            alert('Please select a bill from the available bills.');
             return false;
         }
 
@@ -359,5 +843,172 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     });
 });
+
+// Global functions for quick actions (accessible from onclick handlers)
+function selectBillWithAmount(billId, amount) {
+    const bill = availableBills.find(b => b.id == billId);
+    if (bill) {
+        selectBill(bill);
+        document.getElementById('amount').value = parseFloat(amount.toString().replace(/,/g, ''));
+    }
+}
+
+function selectBillForPartial(billId) {
+    const bill = availableBills.find(b => b.id == billId);
+    if (bill) {
+        selectBill(bill);
+        document.getElementById('amount').value = '';
+        document.getElementById('amount').focus();
+    }
+}
+
+function clearSelectedBill() {
+    const billIdInput = document.getElementById('bill_id');
+    const selectedBillDisplay = document.getElementById('selectedBillDisplay');
+    const amountInput = document.getElementById('amount');
+
+    billIdInput.value = '';
+    selectedBillDisplay.innerHTML = '<span class="text-muted">No bill selected</span>';
+    amountInput.value = '';
+    amountInput.max = '';
+
+    // Update max amount display if element exists
+    const maxAmountElement = document.getElementById('maxAmount');
+    if (maxAmountElement) {
+        maxAmountElement.textContent = '0.00';
+    }
+
+    // Hide quick amount buttons
+    const quickAmountButtons = document.getElementById('quickAmountButtons');
+    if (quickAmountButtons) {
+        quickAmountButtons.style.display = 'none';
+    }
+
+    // Clear current bill balance
+    window.currentBillBalance = 0;
+    window.currentBillTotal = 0;
+
+    // Hide payment summary
+    hidePaymentSummary();
+
+    // Remove visual selection
+    document.querySelectorAll('.bill-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Update validation
+    validateForm();
+}
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <div style="display: flex; justify-content: between; align-items: center;">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 18px; margin-left: 10px; cursor: pointer;">&times;</button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Quick amount function
+function setQuickAmount(percentage) {
+    const amountInput = document.getElementById('amount');
+    if (window.currentBillBalance && window.currentBillBalance > 0) {
+        const amount = (window.currentBillBalance * percentage / 100).toFixed(2);
+        amountInput.value = amount;
+
+        // Add visual feedback
+        amountInput.style.background = '#e8f5e8';
+        setTimeout(() => {
+            amountInput.style.background = '';
+        }, 1000);
+
+        // Update payment summary
+        updatePaymentSummary();
+    }
+}
+
+// Payment summary functions
+function updatePaymentSummary() {
+    const amountInput = document.getElementById('amount');
+    const payingAmount = parseFloat(amountInput.value) || 0;
+
+    if (window.currentBillBalance > 0 && payingAmount > 0) {
+        showPaymentSummary(payingAmount);
+    } else {
+        hidePaymentSummary();
+    }
+
+    // Update form validation
+    validateForm();
+}
+
+function showPaymentSummary(payingAmount) {
+    const billTotal = window.currentBillBalance;
+    const remaining = Math.max(0, billTotal - payingAmount);
+    const percentage = Math.min(100, (payingAmount / billTotal) * 100);
+
+    document.getElementById('summaryBillTotal').textContent = `Rs. ${billTotal.toFixed(2)}`;
+    document.getElementById('summaryPayingNow').textContent = `Rs. ${payingAmount.toFixed(2)}`;
+    document.getElementById('summaryRemaining').textContent = `Rs. ${remaining.toFixed(2)}`;
+    document.getElementById('paymentProgress').style.width = `${percentage}%`;
+    document.getElementById('paymentPercentage').textContent = `${percentage.toFixed(1)}%`;
+
+    document.getElementById('paymentSummary').style.display = 'block';
+    document.getElementById('noPaymentSummary').style.display = 'none';
+}
+
+function hidePaymentSummary() {
+    document.getElementById('paymentSummary').style.display = 'none';
+    document.getElementById('noPaymentSummary').style.display = 'block';
+}
+
+// Real-time form validation
+function validateForm() {
+    const studentId = document.getElementById('student_id').value;
+    const billId = document.getElementById('bill_id').value;
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const paymentMethod = document.getElementById('payment_method').value;
+    const paymentDate = document.getElementById('payment_date').value;
+
+    const errors = [];
+
+    if (!studentId) errors.push('Please select a student');
+    if (!billId) errors.push('Please select a bill');
+    if (amount <= 0) errors.push('Please enter a valid amount');
+    if (amount > window.currentBillBalance) errors.push(`Amount cannot exceed Rs. ${window.currentBillBalance.toFixed(2)}`);
+    if (!paymentMethod) errors.push('Please select a payment method');
+    if (!paymentDate) errors.push('Please select a payment date');
+
+    const submitBtn = document.getElementById('submitBtn');
+    const validationMessages = document.getElementById('validationMessages');
+    const validationList = document.getElementById('validationList');
+
+    if (errors.length > 0) {
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('btn-primary');
+        submitBtn.classList.add('btn-secondary');
+
+        validationList.innerHTML = errors.map(error => `<li>${error}</li>`).join('');
+        validationMessages.style.display = 'block';
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-secondary');
+        submitBtn.classList.add('btn-primary');
+        validationMessages.style.display = 'none';
+    }
+}
 </script>
 @endsection

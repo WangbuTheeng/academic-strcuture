@@ -60,7 +60,13 @@ class PaymentController extends Controller
             });
         }
 
-        $payments = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 15);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
+        $payments = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Get filter options
         $paymentMethods = Payment::getPaymentMethods();
@@ -351,18 +357,47 @@ class PaymentController extends Controller
             $bills = StudentBill::where('student_id', $request->student_id)
                 ->where('school_id', auth()->user()->school_id) // Ensure school isolation
                 ->whereIn('status', ['pending', 'partial', 'overdue'])
-                ->with(['billItems'])
+                ->with(['billItems', 'academicYear'])
                 ->orderBy('due_date')
                 ->get()
                 ->map(function ($bill) {
+                    // Determine enhanced status
+                    $status = $bill->status;
+                    if ($bill->due_date->isPast() && $bill->balance_amount > 0) {
+                        $status = 'overdue';
+                    }
+
+                    // Calculate days until/past due date
+                    $daysUntilDue = now()->diffInDays($bill->due_date, false);
+                    $dueDateStatus = 'normal';
+                    if ($daysUntilDue < 0) {
+                        $dueDateStatus = 'overdue';
+                    } elseif ($daysUntilDue <= 7) {
+                        $dueDateStatus = 'due_soon';
+                    }
+
+                    // Get bill title/description
+                    $billTitle = $bill->bill_title ?? 'Academic Fee Bill';
+                    if ($bill->academicYear) {
+                        $billTitle .= ' - ' . $bill->academicYear->name;
+                    }
+
                     return [
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
+                        'bill_title' => $billTitle,
                         'balance_amount' => number_format($bill->balance_amount, 2),
                         'due_date' => $bill->due_date->format('Y-m-d'),
+                        'due_date_formatted' => $bill->due_date->format('M d, Y'),
                         'total_amount' => number_format($bill->total_amount, 2),
                         'paid_amount' => number_format($bill->paid_amount, 2),
-                        'status' => $bill->status
+                        'status' => $status,
+                        'due_date_status' => $dueDateStatus,
+                        'days_until_due' => $daysUntilDue,
+                        'is_overdue' => $bill->due_date->isPast() && $bill->balance_amount > 0,
+                        'payment_progress' => $bill->total_amount > 0 ? round(($bill->paid_amount / $bill->total_amount) * 100, 1) : 0,
+                        'has_items' => $bill->billItems->count() > 0,
+                        'items_count' => $bill->billItems->count(),
                     ];
                 });
 

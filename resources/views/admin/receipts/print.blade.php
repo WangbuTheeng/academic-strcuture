@@ -33,68 +33,15 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
-            position: relative;
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
-
-        .logo-section {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 70px;
-            height: 70px;
-        }
-
-        .logo-section img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 10px;
-            border: 3px solid rgba(255,255,255,0.4);
-            background: rgba(255,255,255,0.1);
-            padding: 2px;
-        }
-
-        .logo-placeholder {
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 10px;
-            border: 3px solid rgba(255,255,255,0.4);
-        }
-
-        .institution-details {
-            flex: 1;
             text-align: center;
         }
 
-        .institution-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
 
-        .institution-address {
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
 
         .receipt-title {
             background: rgba(255,255,255,0.2);
             margin: 15px -20px -20px -20px;
-            padding: 10px;
+            padding: 12px;
             font-size: 18px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -134,21 +81,23 @@
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
+            border: 1px solid #ddd;
         }
 
         .payment-table th {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 10px 12px;
             text-align: left;
             font-weight: bold;
             border: 1px solid #ddd;
             color: #333;
+            font-size: 13px;
         }
 
         .payment-table td {
-            padding: 12px;
+            padding: 10px 12px;
             border: 1px solid #ddd;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .payment-table td.amount {
@@ -175,6 +124,8 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
+
 
         /* Footer */
         .receipt-footer {
@@ -244,25 +195,21 @@
     <div class="receipt-container">
         <!-- Header -->
         <div class="receipt-header">
-            <div class="header-content">
-                <div class="logo-section">
-                    @if(isset($instituteSettings->institution_logo) && $instituteSettings->institution_logo)
-                        <img src="{{ asset('storage/' . $instituteSettings->institution_logo) }}" alt="Institution Logo"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="logo-placeholder" style="display: none;">
-                            {{ substr($instituteSettings->institution_name ?? 'AMS', 0, 3) }}
-                        </div>
-                    @else
-                        <div class="logo-placeholder">
-                            {{ substr($instituteSettings->institution_name ?? 'AMS', 0, 3) }}
-                        </div>
-                    @endif
-                </div>
-
-                <div class="institution-details">
-                    <div class="institution-name">{{ $instituteSettings->institution_name ?? 'Test Academy' }}</div>
-                    <div class="institution-address">{{ $instituteSettings->institution_address ?? 'test address' }}</div>
-                    <div class="institution-address">Phone: {{ $instituteSettings->institution_phone ?? '45454' }} | Email: {{ $instituteSettings->institution_email ?? 'test12@gmail.com' }}</div>
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                @if(isset($instituteSettings->institution_logo) && $instituteSettings->institution_logo)
+                    <img src="{{ asset('storage/' . $instituteSettings->institution_logo) }}"
+                         alt="Logo" style="width: 60px; height: 60px; margin-right: 15px; border-radius: 8px;">
+                @endif
+                <div>
+                    <div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">
+                        {{ $instituteSettings->institution_name ?? 'Test Academy' }}
+                    </div>
+                    <div style="font-size: 14px; opacity: 0.9;">
+                        {{ $instituteSettings->institution_address ?? 'test address' }}
+                    </div>
+                    <div style="font-size: 14px; opacity: 0.9;">
+                        Phone: {{ $instituteSettings->institution_phone ?? '45454' }} | Email: {{ $instituteSettings->institution_email ?? 'test12@gmail.com' }}
+                    </div>
                 </div>
             </div>
             <div class="receipt-title">PAYMENT RECEIPT</div>
@@ -270,75 +217,80 @@
         
         <!-- Receipt Content -->
         <div class="receipt-content">
-            <!-- Receipt Information Table -->
-            <table class="info-table">
-                <tr>
-                    <td class="label">Receipt No:</td>
-                    <td class="value">{{ $receipt->receipt_number ?? $receipt->id }}</td>
-                    <td class="label">Student:</td>
-                    <td class="value">{{ $receipt->payment->student->full_name ?? 'Wangbu Tamang' }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Date:</td>
-                    <td class="value">{{ $receipt->receipt_date->format('M d, Y') }}</td>
-                    <td class="label">Admission No:</td>
-                    <td class="value">{{ $receipt->payment->student->admission_number ?? 'ADM-2025-002' }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Payment Method:</td>
-                    <td class="value">{{ ucwords(str_replace('_', ' ', $receipt->payment_method)) }}</td>
-                    <td class="label">Class:</td>
-                    <td class="value">{{ $receipt->payment->student->currentEnrollment->class->name ?? 'Test Class' }}</td>
-                </tr>
-            </table>
+            <!-- Receipt Information -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <p><strong>Receipt No:</strong> {{ $receipt->receipt_number ?? 'REC-' . str_pad($receipt->id, 6, '0', STR_PAD_LEFT) }}</p>
+                        <p><strong>Date:</strong> {{ $receipt->receipt_date->format('M d, Y') }}</p>
+                        <p><strong>Payment Method:</strong> {{ ucwords(str_replace('_', ' ', $receipt->payment_method)) }}</p>
+                    </div>
+                    <div>
+                        <p><strong>Student:</strong> {{ $receipt->payment->student->full_name }}</p>
+                        <p><strong>Admission No:</strong> {{ $receipt->payment->student->admission_number }}</p>
+                        <p><strong>Class:</strong> {{ $receipt->payment->student->currentEnrollment->class->name ?? 'Test Class' }}</p>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Fee Details Section -->
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <!-- Fee Details -->
+            <table class="payment-table">
                 <thead>
-                    <tr style="background: #f8f9fa;">
-                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Fee Description</th>
-                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left; font-size: 12px;">Category</th>
-                        <th style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size: 12px;">Amount</th>
+                    <tr>
+                        <th>Fee Description</th>
+                        <th>Category</th>
+                        <th class="amount">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($receipt->payment->bill->billItems as $item)
                     <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">{{ $item->description }}</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; font-size: 11px;">{{ ucfirst($item->fee_category ?? 'General') }}</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size: 11px;">NRs. {{ number_format($item->final_amount, 2) }}</td>
+                        <td>{{ $item->description }}</td>
+                        <td>
+                            @if(stripos($item->description, 'previous') !== false || stripos($item->description, 'outstanding') !== false)
+                                <span style="background: #ffc107; color: #856404; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold;">Previous Dues</span>
+                            @else
+                                <span style="background: #6c757d; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold;">{{ ucfirst($item->fee_category ?? 'General') }}</span>
+                            @endif
+                        </td>
+                        <td class="amount">NRs. {{ number_format($item->final_amount, 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
 
-            <!-- Payment Summary Section -->
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <!-- Payment Summary -->
+            <table class="payment-table" style="margin-top: 20px;">
                 <tbody>
                     <tr style="background: #f8f9fa;">
-                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Bill Total Amount</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->total_amount, 2) }}</td>
+                        <td style="font-weight: bold;">Bill Total Amount</td>
+                        <td></td>
+                        <td class="amount" style="font-weight: bold;">NRs. {{ number_format($receipt->payment->bill->total_amount, 2) }}</td>
                     </tr>
                     <tr style="background: #f8f9fa;">
-                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Total Amount Paid So Far</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->payment->bill->paid_amount, 2) }}</td>
+                        <td style="font-weight: bold;">Total Amount Paid So Far</td>
+                        <td></td>
+                        <td class="amount" style="font-weight: bold;">NRs. {{ number_format($receipt->payment->bill->paid_amount, 2) }}</td>
                     </tr>
                     <tr style="background: #f8f9fa;">
-                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Amount Paid (This Receipt)</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($receipt->amount, 2) }}</td>
+                        <td style="font-weight: bold;">Amount Paid (This Receipt)</td>
+                        <td></td>
+                        <td class="amount" style="font-weight: bold;">NRs. {{ number_format($receipt->amount, 2) }}</td>
                     </tr>
                     @php
                         $remainingBalance = $receipt->payment->bill->balance_amount;
                     @endphp
                     @if($remainingBalance > 0)
                     <tr style="background: #f8f9fa;">
-                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Remaining Balance</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">NRs. {{ number_format($remainingBalance, 2) }}</td>
+                        <td style="font-weight: bold;">Remaining Balance</td>
+                        <td></td>
+                        <td class="amount" style="font-weight: bold;">NRs. {{ number_format($remainingBalance, 2) }}</td>
                     </tr>
                     @else
                     <tr style="background: #f8f9fa;">
-                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; font-size: 11px;">Bill Status</td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; font-size: 11px;">FULLY PAID</td>
+                        <td style="font-weight: bold;">Bill Status</td>
+                        <td></td>
+                        <td class="amount" style="font-weight: bold;">FULLY PAID</td>
                     </tr>
                     @endif
                 </tbody>
@@ -347,32 +299,42 @@
 
         @if($pendingBills->count() > 0)
         <!-- Other Pending Bills -->
-        <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">
-            <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">
-                OTHER PENDING BILLS
-            </div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+            <h4 style="margin-bottom: 15px; color: #856404;">Other Pending Bills</h4>
+            <p style="margin-bottom: 15px; font-size: 13px; color: #856404;">
+                <strong>Note:</strong> Student has {{ $pendingBills->count() }} other pending bill(s)
+            </p>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                 <thead>
                     <tr style="background: #f8f9fa;">
-                        <th style="padding: 4px; text-align: left; border: 1px solid #ddd;">Bill #</th>
-                        <th style="padding: 4px; text-align: center; border: 1px solid #ddd;">Due Date</th>
-                        <th style="padding: 4px; text-align: right; border: 1px solid #ddd;">Amount Due</th>
-                        <th style="padding: 4px; text-align: center; border: 1px solid #ddd;">Status</th>
+                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Bill #</th>
+                        <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Description</th>
+                        <th style="padding: 8px; text-align: center; border: 1px solid #ddd;">Due Date</th>
+                        <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Amount Due</th>
+                        <th style="padding: 8px; text-align: center; border: 1px solid #ddd;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($pendingBills as $bill)
                     <tr>
-                        <td style="padding: 4px; border: 1px solid #ddd;">{{ $bill->bill_number }}</td>
-                        <td style="padding: 4px; text-align: center; border: 1px solid #ddd;">{{ $bill->due_date->format('M d, Y') }}</td>
-                        <td style="padding: 4px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($bill->balance_amount, 2) }}</td>
-                        <td style="padding: 4px; text-align: center; border: 1px solid #ddd;">{{ strtoupper($bill->status) }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">{{ $bill->bill_number }}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">{{ $bill->bill_title ?? 'Academic Fee Bill' }}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">{{ $bill->due_date->format('M d, Y') }}</td>
+                        <td style="padding: 6px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($bill->balance_amount, 2) }}</td>
+                        <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
+                            @if($bill->due_date->isPast())
+                                <span style="color: #dc3545; font-weight: bold;">OVERDUE</span>
+                            @else
+                                <span style="color: #ffc107; font-weight: bold;">{{ strtoupper($bill->status) }}</span>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                     <tr style="background: #f8f9fa; font-weight: bold;">
-                        <td colspan="2" style="padding: 6px; border: 1px solid #ddd;">Total Outstanding</td>
-                        <td style="padding: 6px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($pendingBills->sum('balance_amount'), 2) }}</td>
-                        <td style="padding: 6px; border: 1px solid #ddd;"></td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd; text-align: right;">Total Outstanding</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">NRs. {{ number_format($pendingBills->sum('balance_amount'), 2) }}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"></td>
                     </tr>
                 </tbody>
             </table>

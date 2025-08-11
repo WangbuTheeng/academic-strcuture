@@ -66,7 +66,13 @@ class StudentBillController extends Controller
             });
         }
 
-        $bills = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Handle per page selection
+        $perPage = $request->input('per_page', 15);
+        if (!in_array($perPage, [15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
+        $bills = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Get filter options
         $academicYears = AcademicYear::orderBy('name')->get();
@@ -269,6 +275,73 @@ class StudentBillController extends Controller
                 'success' => false,
                 'message' => 'Error fetching student information: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Show comprehensive student financial history
+     */
+    public function studentFinancialHistory($studentId)
+    {
+        try {
+            $student = Student::with([
+                'currentEnrollment.class',
+                'currentEnrollment.program',
+                'enrollments.academicYear'
+            ])
+            ->where('school_id', auth()->user()->school_id)
+            ->findOrFail($studentId);
+
+            // Get all bills for this student
+            $bills = StudentBill::with([
+                'academicYear',
+                'billItems',
+                'payments' => function($query) {
+                    $query->orderBy('payment_date', 'desc');
+                },
+                'payments.verifier'
+            ])
+            ->where('student_id', $studentId)
+            ->where('school_id', auth()->user()->school_id)
+            ->orderBy('bill_date', 'desc')
+            ->get();
+
+            // Calculate financial summary
+            $totalBilled = $bills->sum('total_amount');
+            $totalPaid = $bills->sum('paid_amount');
+            $totalDue = $bills->sum('balance_amount');
+            $overdueBills = $bills->where('status', 'overdue')->count();
+            $paidBills = $bills->where('status', 'paid')->count();
+
+            // Get payment history across all bills
+            $allPayments = collect();
+            foreach ($bills as $bill) {
+                foreach ($bill->payments as $payment) {
+                    $payment->bill_info = $bill;
+                    $allPayments->push($payment);
+                }
+            }
+            $allPayments = $allPayments->sortByDesc('payment_date');
+
+            // Group bills by academic year
+            $billsByYear = $bills->groupBy(function($bill) {
+                return $bill->academicYear->name ?? 'Unknown Year';
+            });
+
+            return view('admin.student-bills.financial-history', compact(
+                'student',
+                'bills',
+                'billsByYear',
+                'allPayments',
+                'totalBilled',
+                'totalPaid',
+                'totalDue',
+                'overdueBills',
+                'paidBills'
+            ));
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Student not found or error occurred');
         }
     }
 

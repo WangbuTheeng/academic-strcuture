@@ -189,6 +189,40 @@ class StudentController extends Controller
     }
 
     /**
+     * Search students for AJAX requests
+     */
+    public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json(['students' => []]);
+        }
+
+        $students = Student::with(['currentEnrollment.class', 'currentEnrollment.program'])
+            ->where('school_id', auth()->user()->school_id)
+            ->where(function ($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                  ->orWhere('last_name', 'like', "%{$query}%")
+                  ->orWhere('admission_number', 'like', "%{$query}%");
+            })
+            ->active()
+            ->limit(10)
+            ->get()
+            ->map(function ($student) {
+                return [
+                    'id' => $student->id,
+                    'full_name' => $student->full_name,
+                    'admission_number' => $student->admission_number,
+                    'current_class' => $student->currentEnrollment?->class?->name,
+                    'current_program' => $student->currentEnrollment?->program?->name,
+                ];
+            });
+
+        return response()->json(['students' => $students]);
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Student $student)
